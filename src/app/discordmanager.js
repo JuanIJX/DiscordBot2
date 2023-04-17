@@ -10,16 +10,13 @@ export default class DiscordManager {
 		Object.defineProperty(this, '_discord', { value: new Client({ intents, disableMentions: 'everyone' }) });
 
 		// Settings
-		/*this._discord.on("ready", client => {
-			console.log("Cliente ready");
-		});*/
 		this._discord.on("error", error => {
 			this.log(Level.ERROR, error.message);
 			this.log(Level.DEBUG, error.stack);
 		});
 	}
 
-	log(level, msg) { this._logger.log(level, "BOT", msg); }
+	log(level, msg) { this._logger.log(level, "D-BOT", msg); }
 	get name() { return this.constructor.name; }
 	get started() { return this._started === true; }
 	get discord() { return this._discord; }

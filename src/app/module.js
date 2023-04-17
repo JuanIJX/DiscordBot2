@@ -12,13 +12,16 @@ export default class Module {
 		if(!(discordManager instanceof DiscordManager))
 			throw new Error(`Falta el elemento Discord en el plugin ${this.name}`);
 
+
 		// Variables
+
 		Object.defineProperty(this, "_path", { value: this._getPluginPath() });
 		Object.defineProperty(this, '_logger', { value: logger });
 		Object.defineProperty(this, '_started', { value: false, writable: true });
 		Object.defineProperty(this, 'configs', { value: new ConfigManager(this._path), enumerable: true });
 		Object.defineProperty(this, 'eventList', { value: new Collection(), enumerable: true });
 
+		
 		// Functions
 
 		this.log(Level.DEBUG, `Plugin ${this.name} instanciado`);

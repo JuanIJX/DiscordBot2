@@ -1,16 +1,16 @@
-//const util = require('util');
-//const exec = util.promisify(require('child_process').exec);
+import path from "path"
 
+console.log(path.normalize("./logs/hola"));
+
+/*
 import util from "util"
-import { exec as execX } from "child_process";
-const exec = util.promisify(execX);
-
+import { exec } from "child_process";
 (async () => {
-
+    const ejc = util.promisify(exec);
     try {
-       const { stdout, stderr } = await exec('npm install npm');
+       const { stdout, stderr } = await ejc('npm install npm');
        console.log(stdout);
     } catch (e) {
         console.error(e); // should contain code (exit code) and signal (that caused the termination).
     }
-})();
+})();*/

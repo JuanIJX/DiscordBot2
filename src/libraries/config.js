@@ -14,13 +14,13 @@ function cloneObject(object) {
 }
 
 export default class Config {
-	static permitedExtensions = ["json", "yaml"];
+	static permitedExtensions = ["json", "yml"];
 
 	constructor(ruta, defaultData={}) {
 		if(ruta === undefined)
 			throw new Error("Obligatoria una ruta");
 		if(!typeof(defaultData)=="object")
-			throw new Error("Obligatorio valores default");
+			throw new Error("Se esperaba un objeto como segundo parámetro");
 
 		Object.defineProperty(this, "ext", { value: ruta.getExt() });
 		if(!this.constructor.permitedExtensions.includes(this.ext))
@@ -94,7 +94,7 @@ export default class Config {
 		switch (this.ext) {
 			case "json":
 				return JSON.parse(data);
-			case "yaml":
+			case "yml":
 				return YAML.parse(data);
 		}
 	}
@@ -103,7 +103,7 @@ export default class Config {
 		switch (this.ext) {
 			case "json":
 				return JSON.stringify(data, null, "\t");
-			case "yaml":
+			case "yml":
 				return YAML.stringify(data);
 		}
 	}

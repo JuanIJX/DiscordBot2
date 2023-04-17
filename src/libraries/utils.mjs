@@ -4,7 +4,8 @@ import url from "url"
 import path from "path"
 import crypto from "crypto"
 import { constants } from 'fs'
-import fs from "fs/promises"
+import fs from "fs"
+import fsPromise from "fs/promises"
 
 function getZero(n = 0) {
 	let cad = '0';
@@ -293,8 +294,14 @@ export function deleteElementArray(arry, element) {
 
 export async function fileExist(file, flags = constants.F_OK) {
 	try {
-		await fs.access(file, flags);
+		await fsPromise.access(file, flags);
 		return true;
 	} catch (error) {}
 	return false;
+}
+
+export function createDir(dir) {
+	dir = path.normalize(dir);
+	if(!fs.existsSync(dir))
+		fs.mkdirSync(dir);
 }

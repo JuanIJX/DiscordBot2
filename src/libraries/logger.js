@@ -29,7 +29,7 @@ export default class Logger {
 		// Variables
 		Object.defineProperty(this, '_dayStr', { value: "", writable: true });
 		Object.defineProperty(this, '_file', { value: null, writable: true });
-		Object.defineProperty(this, '_folder', { value: folder ?? "./logs" });
+		Object.defineProperty(this, '_folder', { value: folder!==undefined ? path.normalize(folder) : "logs" });
 		Object.defineProperty(this, '_levelConsole', { value: (Level.ALL & ~Level.DEBUG), writable: true });
 		Object.defineProperty(this, '_levelFile', { value: (Level.ALL & ~Level.DEBUG), writable: true });
 
@@ -73,8 +73,14 @@ export default class Logger {
 				fs.closeSync(this._file);
 		} });
 
-		if (!fs.existsSync(this._folder))
-			fs.mkdirSync(this._folder);
+		if(!fs.existsSync(this._folder)) {
+			var totalpath = ".";
+			for(const dir of this._folder.split("\\")) {
+				totalpath = path.join(totalpath, dir);
+				if(!fs.existsSync(totalpath))
+					fs.mkdirSync(totalpath);
+			}
+		}
     }
 
 	// Public functions

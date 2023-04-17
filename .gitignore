@@ -1,2 +1,4 @@
-/logs
 /node_modules
+/logs
+/src/plugins
+/src/config

@@ -8,17 +8,20 @@ import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const PackageJson = require("../../package.json");
 
+import { createDir, wait } from "../libraries/utils.mjs";
 import Logger, { Level } from "../libraries/logger.js";
 import KeyB from "../libraries/KeyB.js"
 import defaultConfig from "./settings/defaultconfig.js";
+import systemPaths from "./settings/dynamicpaths.js";
 import commands from "../commands.js";
 import DiscordManager from "./discordmanager.js";
-import { wait } from "../libraries/utils.mjs";
 import Module from "./module.js";
+import Config from "../libraries/config.js";
 
 export default class Main {
 	static nombre = PackageJson.name.camelCase("-", false);
 	static version = PackageJson.version;
+
 	static instance = null;
 
 	static header() {
@@ -28,6 +31,10 @@ export default class Main {
 			`--------------------------------------`,
 			"",
 		];
+	}
+
+	static async stop() {
+		await this.instance?.stop();
 	}
 
 	static async init() {
@@ -47,18 +54,15 @@ export default class Main {
 
 				this.instance.log(Level.INFO, "Done!");
 
-				//this.instance.log(Level.INFO, "Pero me paro!");
-				//await wait(200);
-				//this.stop();
+				this.instance.log(Level.INFO, "Pero me paro!");
+				await wait(200);
+				this.stop();
 			} catch (error) {
 				this.instance.log(Level.FATAL, this.instance._config.debug ? error.stack : error.message);
 				this.stop();
 			}
 		}
-	}
-
-	static async stop() {
-		await this.instance?.stop();
+		return this.instance;
 	}
 
 	constructor() {
@@ -66,8 +70,9 @@ export default class Main {
 		Object.defineProperty(this, '_config', { value: {...defaultConfig} });
 		Object.defineProperty(this, '_token', { value: "ODA2NTQ5NzQyODAwMjA3OTIz.YBrD-w.yjkES1scvE2cTvUlUTef4gpcoaI" });
 		Object.defineProperty(this, '_modules', { value: new Collection() });
-		Object.defineProperty(this, '_logger', { value: new Logger() });
+		Object.defineProperty(this, '_logger', { value: new Logger(systemPaths.logsTotalPath) });
 		Object.defineProperty(this, '_discordManager', { value: new DiscordManager(this._logger, this._token) });
+		Object.defineProperty(this, '_configPlugins', { value: new Config(path.join(systemPaths.basePath, systemPaths.configPath, "plugins.yml")) });
 
 
 		//  ** FAST SETTINGS **
@@ -116,12 +121,15 @@ export default class Main {
 	async loadModules() {
 		this.log(Level.DEBUG, "Cargando módulos...");
 
-		const basePath = "src";
-		const pluginsPath = "plugins";
+		const basePath = systemPaths.basePath;
+		const configPath = systemPaths.configPath;
+		const pluginsPath = systemPaths.pluginsPath;
 		const mainJS = "index.js";
-		const files = fs.readdirSync(path.join(basePath, pluginsPath)).filter(file => fs.existsSync(path.join(basePath, pluginsPath, file, mainJS)) ? true : false);
 
-		for (const folder of files) {
+		createDir(path.join(basePath, pluginsPath)); // create config path if no exists
+
+		// Load modules
+		for (const folder of fs.readdirSync(path.join(basePath, pluginsPath)).filter(file => fs.existsSync(path.join(basePath, pluginsPath, file, mainJS)) ? true : false)) {
 			var classModuleName = null;
 			try {
 				const ClassModule = (await import(["..", pluginsPath, folder, mainJS].join("/"))).default;
@@ -143,6 +151,11 @@ export default class Main {
 				this._logger.log(Level.ERROR, classModuleName ?? this.name, this._config.debug ? error.stack : error.message);
 			}
 		}
+
+		// Put config
+		this.modules.forEach((v, key) => this._configPlugins.content[key] = this._configPlugins.content[key] ?? false);
+		this._configPlugins.save(this._configPlugins.content);
+		
 		this.log(Level.INFO, `Plugins cargados: ${this.modules.size}`);
 	}
 }

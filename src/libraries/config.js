@@ -9,25 +9,30 @@ String.prototype.getExt = function() {
 	return this;
 };
 
+function cloneObject(object) {
+	return JSON.parse(JSON.stringify(object));
+}
+
 export default class Config {
-	static permitedExtensions = ["js", "yaml"];
+	static permitedExtensions = ["json", "yaml"];
 
 	constructor(ruta, defaultData={}) {
 		if(ruta === undefined)
 			throw new Error("Obligatoria una ruta");
-		if(typeof(defaultData)=="object")
+		if(!typeof(defaultData)=="object")
 			throw new Error("Obligatorio valores default");
 
 		Object.defineProperty(this, "ext", { value: ruta.getExt() });
 		if(!this.constructor.permitedExtensions.includes(this.ext))
 			throw new Error("Extensión no permitida");
 
-		Object.defineProperty(this, "_defaultData", { value: JSON.parse(JSON.stringify(defaultData)) });
+		Object.defineProperty(this, "_defaultData", { value: cloneObject(defaultData) });
 		Object.defineProperty(this, "_filename", { value: path.basename(ruta) });
-		Object.defineProperty(this, "_src", { value: path.dirname(ruta) });
+		Object.defineProperty(this, "_src", { value: path.join(path.dirname(ruta)) });
 		Object.defineProperty(this, "_file", { value: path.join(this._src, this._filename) });
 		Object.defineProperty(this, "_lastContent", { value: {}, writable: true });
 
+		this._createDirs();
 		if(this.exitsFile())
 			this._readFile();
 		else if(Object.keys(this._defaultData).length > 0)
@@ -39,8 +44,6 @@ export default class Config {
 	}
 
 	get content() {
-		if(Object.keys(this._lastContent).length > 0)
-			this.reload();
 		return this._lastContent;
 	}
 
@@ -53,32 +56,43 @@ export default class Config {
 	}
 
 	save(data) {
-
-		fs.writeSync()
+		if(typeof(data) != "object")
+			throw new Error("Se esperaba un objeto");
+		this._writeFile(data);
 	}
 
 	reload() {
-		if(this.exitsFile()) {
+		if(this.exitsFile())
 			this._readFile();
-			return true;
-		}
-		return false;
+		return this._lastContent;
 	}
 
 
 	// Private functions
 
-	_writeFile() {
+	_createDirs() {
+		if(!fs.existsSync(this._src)) {
+			var totalpath = ".";
+			for(const dir of this._src.split("\\")) {
+				totalpath = path.join(totalpath, dir);
+				if(!fs.existsSync(totalpath))
+					fs.mkdirSync(totalpath);
+			}
+		}
+	}
 
+	_writeFile(data) {
+		fs.writeFileSync(this.file, this._objectToString(data));
+		this._lastContent = data;
 	}
 
 	_readFile() {
-		return this._lastContent = this._stringToObject(fs.readFileSync(this.file, 'utf8'));
+		this._lastContent = this._stringToObject(fs.readFileSync(this.file, 'utf8'));
 	}
 
 	_stringToObject(data) {
 		switch (this.ext) {
-			case "js":
+			case "json":
 				return JSON.parse(data);
 			case "yaml":
 				return YAML.parse(data);
@@ -87,8 +101,8 @@ export default class Config {
 
 	_objectToString(data) {
 		switch (this.ext) {
-			case "js":
-				return JSON.stringify(data);
+			case "json":
+				return JSON.stringify(data, null, "\t");
 			case "yaml":
 				return YAML.stringify(data);
 		}

@@ -47,12 +47,11 @@ export default class Main {
 
 				this.instance.log(Level.INFO, "Done!");
 
-				this.instance.log(Level.INFO, "Pero me paro!");
-				await wait(200);
-				this.stop();
+				//this.instance.log(Level.INFO, "Pero me paro!");
+				//await wait(200);
+				//this.stop();
 			} catch (error) {
-				this.instance.log(Level.FATAL, error.message);
-				this.instance.log(Level.DEBUG, error.stack);
+				this.instance.log(Level.FATAL, this.instance._config.debug ? error.stack : error.message);
 				this.stop();
 			}
 		}
@@ -123,24 +122,25 @@ export default class Main {
 		const files = fs.readdirSync(path.join(basePath, pluginsPath)).filter(file => fs.existsSync(path.join(basePath, pluginsPath, file, mainJS)) ? true : false);
 
 		for (const folder of files) {
+			var classModuleName = null;
 			try {
 				const ClassModule = (await import(["..", pluginsPath, folder, mainJS].join("/"))).default;
 				if(ClassModule === undefined) // Si lo importado no contiene ningún export
 					continue;
-				if(ClassModule.name != folder) // Si el nombre del directorio no coincide con el nombre del plugin
+				classModuleName = ClassModule.name;
+				if(classModuleName != folder) // Si el nombre del directorio no coincide con el nombre del plugin
 					continue;
-				if(this.modules.has(ClassModule.name)) // Si ya hay un plugin con el mismo nombre
+				if(this.modules.has(classModuleName)) // Si ya hay un plugin con el mismo nombre
 					continue;
 				const instanciedModule = new ClassModule(this._logger, this.discordManager);
 				if(!(instanciedModule instanceof Module)) // Si no extiende la clase Module
 					continue;
 
 				// Cargado con éxito
-				this.modules.set(ClassModule.name, instanciedModule);
-				this.log(Level.DEBUG, `Plugin '${ClassModule.name}' cargado`);
+				this.modules.set(classModuleName, instanciedModule);
+				this.log(Level.DEBUG, `Plugin '${classModuleName}' cargado`);
 			} catch (error) {
-				this.log(Level.ERROR, error.message);
-				this.log(Level.DEBUG, error.stack);
+				this._logger.log(Level.ERROR, classModuleName ?? this.name, this._config.debug ? error.stack : error.message);
 			}
 		}
 		this.log(Level.INFO, `Plugins cargados: ${this.modules.size}`);

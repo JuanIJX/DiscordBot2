@@ -1,14 +1,16 @@
-import path from "path"
-//import * as Util from "../libraries/utils.mjs"
-import Config from "../libraries/config.js"
+//const util = require('util');
+//const exec = util.promisify(require('child_process').exec);
 
-var cnf = new Config("hola/prueba.js", {
-	key1: "value",
-	key2: true,
-	key3: [],
-	key4: {
-		key4_1: "feo",
-		key4_2: "caca"
-	}
-});
-console.log(cnf);
+import util from "util"
+import { exec as execX } from "child_process";
+const exec = util.promisify(execX);
+
+(async () => {
+
+    try {
+       const { stdout, stderr } = await exec('npm install npm');
+       console.log(stdout);
+    } catch (e) {
+        console.error(e); // should contain code (exit code) and signal (that caused the termination).
+    }
+})();

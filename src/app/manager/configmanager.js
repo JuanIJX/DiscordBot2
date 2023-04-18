@@ -1,19 +1,9 @@
 import path from "path"
 import { Collection } from "discord.js";
 import Config from "../../libraries/config.js";
-
 export default class ConfigManager {
 	constructor(path = "") {
 		Object.defineProperty(this, '_path', { value: path });
-		//Object.defineProperty(this, 'configManager', { value: new ConfigManager(), enumerable: true });
-
-		//const file = fs.readFileSync('./src/test/config.yml', 'utf8');
-		//const comments = [...file.matchAll(/#.*/g)].map(m => m[0]);
-		//const parsedFile = YAML.parse(file);
-
-		//var cnf1 = new Config("otracosa/altern/hola/prueba.yaml", defobj);
-		//var cnf2 = new Config("otracosa/altern/hola/prueba.json", defobj);
-
 		this._list = new Collection();
 	}
 

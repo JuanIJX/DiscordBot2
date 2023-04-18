@@ -1,6 +1,5 @@
-import path from "path"
 
-console.log(path.normalize("./logs/hola"));
+
 
 /*
 import util from "util"

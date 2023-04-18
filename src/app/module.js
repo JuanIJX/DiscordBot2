@@ -1,10 +1,12 @@
 import url from "url"
 import path from "path"
 import { get as stackTraceGet } from "stack-trace"
-import { Collection } from "discord.js";
 import Logger, { Level } from "../libraries/logger.js";
 import ConfigManager from "./manager/configmanager.js"
-import DiscordManager from "./discordmanager.js";
+import CommandManager from "./manager/commandmanager.js"
+import EventManager from "./manager/eventmanager.js"
+import DiscordManager from "./manager/discordmanager.js";
+import { wait } from "../libraries/utils.mjs";
 export default class Module {
 	constructor(logger, discordManager ) {
 		if(!(logger instanceof Logger))
@@ -18,13 +20,10 @@ export default class Module {
 		Object.defineProperty(this, "_path", { value: this._getPluginPath() });
 		Object.defineProperty(this, '_logger', { value: logger });
 		Object.defineProperty(this, '_started', { value: false, writable: true });
+		Object.defineProperty(this, 'discord', { value: discordManager, enumerable: true });
 		Object.defineProperty(this, 'configs', { value: new ConfigManager(this._path), enumerable: true });
-		Object.defineProperty(this, 'eventList', { value: new Collection(), enumerable: true });
-
-		
-		// Functions
-
-		this.log(Level.DEBUG, `Plugin ${this.name} instanciado`);
+		Object.defineProperty(this, 'commands', { value: new CommandManager(), enumerable: true });
+		Object.defineProperty(this, 'events', { value: new EventManager(), enumerable: true });
 	}
 
 	log(level, msg) { this._logger?.log(level, this.name, msg); }
@@ -45,18 +44,21 @@ export default class Module {
 	
 	async start() {
 		if(!this._started) {
-			await this.onEnable();
+			if(typeof(this.onEnable) == "function")
+				await this.onEnable();
 			this.log(Level.INFO, `Plugin '${this.name}' iniciado`);
 			this._started = true;
 		}
-	};
+	}
+
 	async stop() {
 		if(this._started) {
-			await this.onDisable();
+			if(typeof(this.onDisable) == "function")
+				await this.onDisable();
 			this.log(Level.INFO, `Plugin '${this.name}' detenido`);
 			this._started = false;
 		}
-	};
+	}
 
 	addConfig(...args) {
 		this.configs.add(...args);

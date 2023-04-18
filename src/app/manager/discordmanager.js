@@ -1,6 +1,6 @@
 import { Client, Collection } from "discord.js"
-import { Level } from "../libraries/logger.js";
-import intents from "./settings/intents.js"
+import { Level } from "../../libraries/logger.js";
+import intents from "../settings/intents.js"
 
 export default class DiscordManager {
 	constructor(logger, token) {

@@ -5,7 +5,7 @@ export default async (main, cadena, cmdName, args) => {
 		case "pl":
 			console.log(`Lista de plugins:`);
 			main.modules.forEach((value, key) => {
-				console.log(`- ${key}`);
+				console.log(`- ${key}: ${value.started ? "ON" : "OFF"}`);
 			});
 			break;
 		default:

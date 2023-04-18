@@ -2,21 +2,24 @@
 
 import fs from "fs"
 import path from "path";
-import YAML from 'yaml'
 import { Collection } from "discord.js"
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const PackageJson = require("../../package.json");
 
+// Personal imports
 import { createDir, wait } from "../libraries/utils.mjs";
 import Logger, { Level } from "../libraries/logger.js";
 import KeyB from "../libraries/KeyB.js"
+
 import defaultConfig from "./settings/defaultconfig.js";
 import systemPaths from "./settings/dynamicpaths.js";
 import commands from "../commands.js";
-import DiscordManager from "./discordmanager.js";
+
+import DiscordManager from "./manager/discordmanager.js";
 import Module from "./module.js";
 import Config from "../libraries/config.js";
+
 
 export default class Main {
 	static nombre = PackageJson.name.camelCase("-", false);
@@ -24,42 +27,15 @@ export default class Main {
 
 	static instance = null;
 
-	static header() {
-		return [
-			`--------------------------------------`,
-			`\t\t${this.nombre} ${this.version}`,
-			`--------------------------------------`,
-			"",
-		];
-	}
-
-	static async stop() {
-		await this.instance?.stop();
-	}
-
 	static async init() {
 		if(this.instance == null) {
 			this.instance = new this();
-
 			try {
-				//  ** SLOW SETTINGS **
-				//await this.instance.discordManager.start();
-
-				await this.instance.loadModules();
-
-
-
-
-
-
-				this.instance.log(Level.INFO, "Done!");
-
-				this.instance.log(Level.INFO, "Pero me paro!");
-				await wait(200);
-				this.stop();
-			} catch (error) {
+				await this.instance.asyncInit();
+			}
+			catch (error) {
 				this.instance.log(Level.FATAL, this.instance._config.debug ? error.stack : error.message);
-				this.stop();
+				this.instance.stop();
 			}
 		}
 		return this.instance;
@@ -83,11 +59,27 @@ export default class Main {
 				.addLevelConsole(Level.DEBUG)
 				.addLevelFile(Level.DEBUG);
 
-		this.log(Level.INFO, this.constructor.header());
+		this.log(Level.INFO, [
+			`--------------------------------------`,
+			`\t\t${this.constructor.nombre} ${this.constructor.version}`,
+			`--------------------------------------`,
+			"",
+		]);
 
 		KeyB.onClose(async () => { await this._stop(); });
 		KeyB.bucle((...args) => commands(this, ...args));
 		this.log(Level.DEBUG, "Iniciado escucha de comandos de consola");
+	}
+
+	async asyncInit() {
+		//  ** SLOW SETTINGS **
+
+		await this.discordManager.start();
+		await this._loadModules();
+		await this._startModules();
+
+		this.log(Level.INFO, "Done!");
+		//this.log(Level.INFO, "Pero me paro!"); await wait(200); this.stop();
 	}
 
 	log(level, msg) { this._logger.log(level, this.name, msg); }
@@ -118,15 +110,14 @@ export default class Main {
 		return config;
 	}
 
-	async loadModules() {
+	async _loadModules() {
 		this.log(Level.DEBUG, "Cargando módulos...");
 
 		const basePath = systemPaths.basePath;
-		const configPath = systemPaths.configPath;
 		const pluginsPath = systemPaths.pluginsPath;
 		const mainJS = "index.js";
 
-		createDir(path.join(basePath, pluginsPath)); // create config path if no exists
+		createDir(path.join(basePath, pluginsPath)); // create plugin path if no exists
 
 		// Load modules
 		for (const folder of fs.readdirSync(path.join(basePath, pluginsPath)).filter(file => fs.existsSync(path.join(basePath, pluginsPath, file, mainJS)) ? true : false)) {
@@ -146,7 +137,7 @@ export default class Main {
 
 				// Cargado con éxito
 				this.modules.set(classModuleName, instanciedModule);
-				this.log(Level.DEBUG, `Plugin '${classModuleName}' cargado`);
+				this._logger.log(Level.DEBUG, this.name, `Plugin '${classModuleName}' cargado`);
 			} catch (error) {
 				this._logger.log(Level.ERROR, classModuleName ?? this.name, this._config.debug ? error.stack : error.message);
 			}
@@ -157,5 +148,11 @@ export default class Main {
 		this._configPlugins.save(this._configPlugins.content);
 		
 		this.log(Level.INFO, `Plugins cargados: ${this.modules.size}`);
+	}
+
+	async _startModules() {
+		for (const [key, value] of this.modules)
+			if(this._configPlugins.content[key] === true)
+				await value.start();
 	}
 }

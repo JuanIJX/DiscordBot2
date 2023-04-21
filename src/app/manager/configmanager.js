@@ -11,6 +11,7 @@ export default class ConfigManager {
 		if(this._list.has(name))
 			throw new Error(`La config ${name} ya existe`);
 		this._list.set(name, new Config(path.join(this._path, src), defaultData));
+		return this._list.get(name);
 	}
 
 	get(name) {

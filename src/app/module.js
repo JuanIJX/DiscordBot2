@@ -8,29 +8,9 @@ import EventManager from "./manager/eventmanager.js"
 import DiscordManager from "./manager/discordmanager.js";
 import { wait } from "../libraries/utils.mjs";
 export default class Module {
-	constructor(logger, discordManager ) {
-		if(!(logger instanceof Logger))
-			throw new Error(`Falta el elemento Logger en el plugin ${this.name}`);
-		if(!(discordManager instanceof DiscordManager))
-			throw new Error(`Falta el elemento Discord en el plugin ${this.name}`);
-
-
+	constructor() {
 		// Variables
-
-		Object.defineProperty(this, "_path", { value: this._getPluginPath() });
-		Object.defineProperty(this, '_logger', { value: logger });
-		Object.defineProperty(this, '_started', { value: false, writable: true });
-		Object.defineProperty(this, 'discord', { value: discordManager, enumerable: true });
-		Object.defineProperty(this, 'configs', { value: new ConfigManager(this._path), enumerable: true });
-		Object.defineProperty(this, 'commands', { value: new CommandManager(), enumerable: true });
-		Object.defineProperty(this, 'events', { value: new EventManager(), enumerable: true });
-	}
-
-	log(level, msg) { this._logger?.log(level, this.name, msg); }
-	get name() { return this.constructor.name; }
-	get started() { return this._started === true; }
-	_getPluginPath() {
-		return path.relative(
+		Object.defineProperty(this, "_path", { value: path.relative(
 			process.cwd(),
 			url.fileURLToPath(
 				path.dirname(
@@ -39,13 +19,38 @@ export default class Module {
 						.getFileName()
 				)
 			)
-		);
+		) });
+		Object.defineProperty(this, '_started', { value: false, writable: true });
+	}
+
+	log(level, msg) { this._logger.log(level, this.name, msg); }
+	get name() { return this.constructor.name; }
+	get started() { return this._started === true; }
+
+	async _load(logger, discordManager, commandManager) {
+		if(this._loaded === true)
+			return;
+		if(!(logger instanceof Logger))
+			throw new Error(`Falta el elemento Logger en el plugin ${this.name}`);
+		if(!(discordManager instanceof DiscordManager))
+			throw new Error(`Falta el elemento Discord en el plugin ${this.name}`);
+		if(!(commandManager instanceof CommandManager))
+			throw new Error(`Falta el elemento CommandManager en el plugin ${this.name}`);
+
+		Object.defineProperty(this, '_logger', { value: logger });
+		Object.defineProperty(this, '_loaded', { value: true });
+		Object.defineProperty(this, '_commandManager', { value: commandManager, enumerable: true });
+		Object.defineProperty(this, 'discordManager', { value: discordManager, enumerable: true });
+		Object.defineProperty(this, 'configManager', { value: new ConfigManager(this._path), enumerable: true });
+		Object.defineProperty(this, 'eventManager', { value: new EventManager(), enumerable: true });
+
+		await this.onLoad();
 	}
 	
 	async start() {
 		if(!this._started) {
-			if(typeof(this.onEnable) == "function")
-				await this.onEnable();
+			this._commandManager.enableModule(this.name);
+			await this.onEnable();
 			this.log(Level.INFO, `Plugin '${this.name}' iniciado`);
 			this._started = true;
 		}
@@ -53,14 +58,29 @@ export default class Module {
 
 	async stop() {
 		if(this._started) {
-			if(typeof(this.onDisable) == "function")
-				await this.onDisable();
+			this._commandManager.disableModule(this.name);
+			await this.onDisable();
 			this.log(Level.INFO, `Plugin '${this.name}' detenido`);
 			this._started = false;
 		}
 	}
 
-	addConfig(...args) {
-		this.configs.add(...args);
+	registerCommand(name, action) {
+		try {
+			this._commandManager.addCommand(name, this, action.bind(this));
+		} catch (error) {
+			this.log(Level.ERROR, error.message);
+		}
 	}
+
+	registerCommands(commands) {
+		if(typeof(commands)!="object")
+			throw new Error("Se esperaba un objeto como parámetro");
+		for (const [key, value] of Object.entries(commands))
+			this.registerCommand(key, value);
+	}
+
+	async onLoad() {}
+	async onEnable() {}
+	async onDisable() {}
 }

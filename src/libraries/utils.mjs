@@ -1,11 +1,14 @@
-// 13/04/2023
+/**
+ * Last modified: 19/04/2023
+ */
 
 import url from "url"
 import path from "path"
-import crypto from "crypto"
-import { constants } from 'fs'
-import fs from "fs"
-import fsPromise from "fs/promises"
+import { exec } from "child_process";
+
+
+
+// Private functions
 
 function getZero(n = 0) {
 	let cad = '0';
@@ -13,9 +16,70 @@ function getZero(n = 0) {
 		cad += '0';
 	return cad;
 }
+
+
+
+// PROTOTYPES
+
+// Array
+Array.prototype.filter2 = function(func) {
+	for (let i = 0; i < this.length; i++) {
+		if(func(this[i]) !== true) {
+			this.splice(i, 1);
+			i--;
+		}
+	}
+	return this;
+};
+Array.prototype.deleteElement = function(element) {
+	var pos = this.indexOf(element);
+	if(pos !== -1)
+		this.splice(pos, 1);
+	return this;
+}
+Array.prototype.unique = function() {
+	var a = this.concat();
+	for(var i=0; i<a.length; ++i) {
+		for(var j=i+1; j<a.length; ++j) {
+			if(a[i] === a[j])
+				a.splice(j--, 1);
+		}
+	}
+	return a;
+};
+Array.prototype.concat2 = function(...arrays) {
+	for (let index = 0; index < arrays.length; index++) {
+		for (let i = 0; i < arrays[index].length; i++) {
+			if(!this.includes(arrays[index][i]))
+				this.push(arrays[index][i]);
+		}
+	}
+}
+
+// Object
 Object.prototype.getKeyByValue = function(value) {
 	return Object.keys(this).find(key => this[key] === value);
 }
+Object.prototype.clone = function() {
+	return JSON.parse(JSON.stringify(this));
+}
+Object.prototype.assign = function(obj) {
+	for (const key in obj) {
+		if (!Object.hasOwnProperty.call(obj, key)) continue;
+		if (Object.hasOwnProperty.call(this, key)) {
+			const oldElement = this[key];
+			if(Array.isArray(oldElement) && Array.isArray(obj[key]))
+				this[key].concat2(obj[key]);
+			else if(typeof(oldElement)=="object" && oldElement!=null && !Array.isArray(oldElement) && typeof(obj[key])=="object" && obj[key]!=null && !Array.isArray(obj[key]))
+				this[key].assign(obj[key]);
+		}
+		else
+			this[key] = obj[key]; // Copiar bien copiao, pero temporalmente lo hacemos asi y ale
+	}
+	return this;
+}
+
+// String
 String.prototype.camelCase = function(sep="_", type=true) {
 	const arry = this.toLowerCase().split(sep);
 	if(type)
@@ -44,7 +108,11 @@ String.prototype.getExt = function() {
 	return this;
 };
 String.prototype.zeroPad = function(n = 2) { return (getZero(n)+this).slice(-1 * (n < this.length ? this.length : n)); };
+
+// Number
 Number.prototype.zeroPad = function(n = 2) { return (this+"").zeroPad(n) };
+
+// Date
 Date.prototype.format= function(format="d/m/Y") {
 	const mes = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 	const semana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -136,6 +204,10 @@ Date.prototype.format= function(format="d/m/Y") {
 	return cad;
 };
 
+
+
+// EXPORTABLE FUNCTIONS
+
 export function getName(obj) { 
 	var funcNameRegex = /function (.{1,})\(/;
 	var results = (funcNameRegex).exec((obj).constructor.toString());
@@ -199,22 +271,6 @@ export function makeid(length=5) {
 
 export function getIp(req) {
 	return req.ip.substring(req.ip.lastIndexOf(":")+1);
-}
-
-export function crypt(cad) {
-	return crypto.createHash('sha256').update(cad).digest('hex');
-}
-
-export function NewError(msg, code, errno) {
-	const error = new Error(msg);
-	error.code = code === undefined ? msg : code;
-	error.errno = errno;
-	return error;
-}
-
-export function NewErrorFormat(arry, ...words) {
-	words.forEach(word => arry[0] = arry[0].replace(/%s/, word))
-	return NewError(...arry);
 }
 
 export function isInteger(num) {
@@ -286,22 +342,10 @@ export function secondsToDhms(seconds) {
 	};
 }
 
-export function deleteElementArray(arry, element) {
-	var pos = arry.indexOf(element);
-	if(pos !== -1)
-		arry.splice(pos, 1);
-}
-
-export async function fileExist(file, flags = constants.F_OK) {
-	try {
-		await fsPromise.access(file, flags);
-		return true;
-	} catch (error) {}
-	return false;
-}
-
-export function createDir(dir) {
-	dir = path.normalize(dir);
-	if(!fs.existsSync(dir))
-		fs.mkdirSync(dir);
-}
+export const ejc = cmd => {
+	return new Promise((resolve, reject) => {
+		exec(cmd, function(err, stdout, stderr) {
+			err ? reject(err) : resolve({ stdout, stderr });
+		})
+	});
+};

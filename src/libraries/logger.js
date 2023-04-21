@@ -5,19 +5,20 @@ import path from "path"
 import { EOL } from "os"
 
 export const Level = {
-	NONE:   0x00,
+	NONE:   0,
 
-	INFO:	0x01,
-	TRACE:	0x02,
-	DEBUG:	0x04,
-	WARN:	0x08,
-	ERROR:	0x10,
-	FATAL:	0x20,
-	TEST:	0x40,
+	INFO:	1 << 0,
+	TRACE:	1 << 1,
+	DEBUG:	1 << 2,
+	WARN:	1 << 3,
+	ERROR:	1 << 4,
+	FATAL:	1 << 5,
+	TEST:	1 << 6,
+	HIST:	1 << 7,
 
 	ALLERR: 0x38,
 
-	ALL:    0xff
+	ALL:    0xff,
 };
 
 export default class Logger {
@@ -30,7 +31,7 @@ export default class Logger {
 		Object.defineProperty(this, '_dayStr', { value: "", writable: true });
 		Object.defineProperty(this, '_file', { value: null, writable: true });
 		Object.defineProperty(this, '_folder', { value: folder!==undefined ? path.normalize(folder) : "logs" });
-		Object.defineProperty(this, '_levelConsole', { value: (Level.ALL & ~Level.DEBUG), writable: true });
+		Object.defineProperty(this, '_levelConsole', { value: (Level.ALL & ~(Level.DEBUG | Level.HIST)), writable: true });
 		Object.defineProperty(this, '_levelFile', { value: (Level.ALL & ~Level.DEBUG), writable: true });
 
 		// Functions

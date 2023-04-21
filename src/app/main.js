@@ -8,7 +8,8 @@ const require = createRequire(import.meta.url);
 const PackageJson = require("../../package.json");
 
 // Personal imports
-import { createDir, wait } from "../libraries/utils.mjs";
+import { wait } from "../libraries/utils.mjs";
+import { createDir } from "./ownfunctions.js";
 import Logger, { Level } from "../libraries/logger.js";
 import KeyB from "../libraries/KeyB.js"
 
@@ -19,6 +20,8 @@ import commands from "../commands.js";
 import DiscordManager from "./manager/discordmanager.js";
 import Module from "./module.js";
 import Config from "../libraries/config.js";
+import CommandManager from "./manager/commandmanager.js";
+import { EOL } from "os";
 
 
 export default class Main {
@@ -48,11 +51,14 @@ export default class Main {
 		Object.defineProperty(this, '_modules', { value: new Collection() });
 		Object.defineProperty(this, '_logger', { value: new Logger(systemPaths.logsTotalPath) });
 		Object.defineProperty(this, '_discordManager', { value: new DiscordManager(this._logger, this._token) });
+		Object.defineProperty(this, '_commandManager', { value: new CommandManager(this._discordManager) });
 		Object.defineProperty(this, '_configPlugins', { value: new Config(path.join(systemPaths.basePath, systemPaths.configPath, "plugins.yml")) });
 
 
 		//  ** FAST SETTINGS **
 		Object.assign(this._config, this._readCommandLineArgs());
+
+		this.discordManager.discord.on("messageCreate", m => this._commandManager.commandHandler(m));
 
 		if(this._config.debug)
 			this._logger
@@ -86,14 +92,16 @@ export default class Main {
 	get name() { return this.constructor.name; }
 	get modules() { return this._modules; }
 	get discordManager() { return this._discordManager; }
+	get commandManager() { return this._commandManager; }
 
 	async stop() {
 		await KeyB.stop();
 	}
 
 	async _stop() {
+		await this._stopModules();
 		this.discordManager.stop();
-		this.log(Level.INFO, "FIN!");
+		this.log(Level.INFO, "FIN!"+EOL);
 	}
 
 	_readCommandLineArgs() {
@@ -131,11 +139,12 @@ export default class Main {
 					continue;
 				if(this.modules.has(classModuleName)) // Si ya hay un plugin con el mismo nombre
 					continue;
-				const instanciedModule = new ClassModule(this._logger, this.discordManager);
+				const instanciedModule = new ClassModule();
 				if(!(instanciedModule instanceof Module)) // Si no extiende la clase Module
 					continue;
 
 				// Cargado con éxito
+				await instanciedModule._load(this._logger, this.discordManager, this.commandManager);
 				this.modules.set(classModuleName, instanciedModule);
 				this._logger.log(Level.DEBUG, this.name, `Plugin '${classModuleName}' cargado`);
 			} catch (error) {
@@ -155,4 +164,23 @@ export default class Main {
 			if(this._configPlugins.content[key] === true)
 				await value.start();
 	}
+
+	async _stopModules() {
+		for (const [key, value] of this.modules)
+			if(value.started)
+				await value.stop();
+	}
 }
+
+
+/**
+	"@discordjs/voice": "^0.16.0",
+    "bufferutil": "^4.0.7",
+    "discord.js": "^14.9.0",
+    "erlpack": "^0.1.4",
+    "fs": "^0.0.1-security",
+    "stack-trace": "^1.0.0-pre2",
+    "utf-8-validate": "^6.0.3",
+    "yaml": "^2.2.1",
+    "zlib-sync": "^0.1.8"
+ */

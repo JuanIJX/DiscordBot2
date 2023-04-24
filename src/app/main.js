@@ -100,7 +100,7 @@ export default class Main {
 
 	async _stop() {
 		await this._stopModules();
-		this.discordManager.stop();
+		await this.discordManager.stop();
 		this.log(Level.INFO, "FIN!"+EOL);
 	}
 

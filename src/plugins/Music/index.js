@@ -1,0 +1,166 @@
+import Module from "../../app/module.js"
+import { getEmbed } from "../../app/ownfunctions.js";
+import { Level } from "../../libraries/logger.js";
+import { isInteger } from "../../libraries/utils.mjs";
+import MusicController from "./music-controller.js";
+export default class Music extends Module {
+	async onLoad() {
+		this.configManager.add("queue", "config/queue.yml", {
+			selfDeaf: false,
+			leaveOnEmpty: false,
+			leaveOnEnd: false,
+			leaveOnEmptyCooldown: 30000,
+			leaveOnEndCooldown: 30000,
+			leaveOnStop: false,
+        	leaveOnStopCooldown: 30000,
+			volume: 100,
+		});
+		this.mc = new MusicController(this, this.configManager.get("queue"));
+		await this.mc.load();
+		this.registerCommand("!po", funcMusic);
+	}
+	async onEnable() {}
+	async onDisable() {
+		await this.mc.destroy();
+	}
+}
+
+async function funcMusic(message, cmdName, args) {
+	let
+		channel = message.member.voice.channel,
+		queue = this.mc.getQueue(message.guildId),
+		searchResult,
+		track,
+		cadURL,
+		aux1, aux2;
+
+	switch (args[0]) {
+		case "t":
+		case "test":
+			cadURL = "https://open.spotify.com/playlist/4n1hWfaXaUOUihWwsgSLcP?si=3ccbecee9ea8493b";
+			cadURL = "https://open.spotify.com/playlist/37i9dQZEVXcGlPKsPtaZre?si=270cc6f764864e0a&nd=1";
+			searchResult = await this.mc.search(cadURL);
+			queue = this.mc.createQueue(message.guildId);
+			await queue.addAndPlay(searchResult, channel);
+			break;
+		case "t2":
+			if(!queue)
+				message.reply(`No hay cola`);
+			else {
+				console.log(queue.getQueueInfo());
+			}
+			break;
+		case "eq":
+		case "equalizer":
+			if(args.length <= 1)
+				message.channel.send(this.getEmbed(this.mc.embedEqualizer()));
+			else if(!queue)
+				message.reply(`No hay cola`);
+			else {
+				aux1 = (args.length > 1 && isInteger(args[1])) ? parseInt(args[1]) : 1;
+				if(aux1 < 1 || aux1 > Object.keys(this.mc.getEqualizerList()).length)
+					message.reply(`Posición de la lista erróneo`);
+				else {
+					if(!queue.queue.filters.equalizer)
+						message.reply(`El equalizador no está disponible`);
+					else {
+						//.setEQ([{ band: 0, gain: 0.78 }]);
+						queue.queue.filters.equalizer.setEQ(this.mc.getEqualizerList(aux1-1))
+						message.reply(`Equalizer: ${Object.keys(this.mc.getEqualizerList()[aux1-1])}`);
+					}
+				}
+			}
+			break;
+		case "j":
+		case "jump":
+			if(!queue)
+				message.reply(`No hay cola`);
+			else {
+				aux1 = (args.length > 1 && isInteger(args[1])) ? parseInt(args[1]) : 1;
+				if(aux1 < 1 || aux1 > queue.tracksLength())
+					message.reply(`Posición no válida`);
+				else {
+					queue.jump(aux1-1);
+					message.reply(`Skip a ${aux1}`);
+				}
+			}
+			break;
+		case "removepos":
+			if(!queue)
+				message.reply(`No hay cola`);
+			else if(args.length < 3)
+				message.reply(`Faltan parámetros`);
+			else {
+				try {
+					queue.removePositions(parseInt(args[1])-1, parseInt(args[2])-1);
+					message.reply(`Canciones eliminadas: ${parseInt(args[2]) + 1 - parseInt(args[1])}`);
+				} catch (error) {
+					message.reply(error.message);
+				}
+			}
+			break;
+		case "r":
+		case "remove":
+			aux1 = queue?.remove((args.length > 1 && isInteger(args[1])) ? parseInt(args[1])-1 : 0);
+			if(aux1)
+				message.reply(`Canción eliminada: ${aux1.title}`);
+			else
+				message.reply(`No se eliminó nada`);
+			break;
+		case "l":
+		case "list":
+			if(!queue)
+				message.reply(`No hay cola`);
+			else
+				message.channel.send(this.getEmbed(queue.embedList((args.length > 1 && isInteger(args[1])) ? parseInt(args[1])-1 : 0, 10)));
+			break;
+		case "stop":
+			queue?.queue.delete();
+			break;
+		case "s":
+		case "skip":
+			queue?.skip();
+			if(!queue)
+				message.reply(`No hay cola`);
+			else {
+				queue.skip();
+				message.reply(`Skipped`);
+			}
+			break;
+		default:
+			if(!channel)
+				message.reply(`Debes estar en un canal de voz`);
+			else {
+				cadURL = message.content.substr(cmdName.length).trim();
+				if(!cadURL)
+					message.reply(`No se proporcionó una canción`);
+				else {
+					searchResult = await this.mc.search(cadURL, { requestedBy: message.member });
+					if (!searchResult || !searchResult.hasTracks())
+						message.reply(`No se encuentra la canción`);
+					else {
+						try {
+							queue = this.mc.createQueue(message.guildId);
+							if(await queue.addAndPlay(searchResult, channel))
+								message.reply(`Reproduciendo`);
+							else
+								message.reply(`Añadido a la cola`);
+						} catch (error) {
+							message.reply(`Error`);
+							this.log(Level.DEBUG, error);
+						}
+					}
+				}
+			}
+			break;
+	}
+}
+
+/**
+    "@discord-player/extractor": "^4.1.2",
+    "@discordjs/opus": "^0.9.0",
+    "discord-player": "^6.1.1",
+    "ffmpeg-static": "^5.1.0",
+    "libsodium-wrappers": "^0.7.11",
+    "ytdl-core": "^4.11.3",
+ */

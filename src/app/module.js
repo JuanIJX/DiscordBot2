@@ -26,6 +26,23 @@ export default class Module {
 	log(level, msg) { this._logger.log(level, this.name, msg); }
 	get name() { return this.constructor.name; }
 	get started() { return this._started === true; }
+	get _defaultEmbed() {
+		return {
+			color: 0x00ff80,
+			author: {
+				name: "Pepino BOT",
+				icon_url: "https://ideaschungas.com/uuuu.png",
+			},
+			thumbnail: {
+				url: "https://ideaschungas.com/uuuu.png",
+			},
+			timestamp: new Date().toISOString(),
+			footer: {
+				text: "© IJX",
+				icon_url: "https://ideaschungas.com/uuuu.png",
+			},
+		};
+	}
 
 	async _load(logger, discordManager, commandManager) {
 		if(this._loaded === true)
@@ -55,7 +72,6 @@ export default class Module {
 			this._started = true;
 		}
 	}
-
 	async stop() {
 		if(this._started) {
 			this._commandManager.disableModule(this.name);
@@ -72,12 +88,15 @@ export default class Module {
 			this.log(Level.ERROR, error.message);
 		}
 	}
-
 	registerCommands(commands) {
 		if(typeof(commands)!="object")
 			throw new Error("Se esperaba un objeto como parámetro");
 		for (const [key, value] of Object.entries(commands))
 			this.registerCommand(key, value);
+	}
+
+	getEmbed(...objs) {
+		return { embeds: objs.map(obj => obj.assign(this._defaultEmbed)) };
 	}
 
 	async onLoad() {}

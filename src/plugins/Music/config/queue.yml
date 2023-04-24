@@ -1,0 +1,8 @@
+selfDeaf: false
+leaveOnEmpty: false
+leaveOnEnd: false
+leaveOnEmptyCooldown: 0
+leaveOnEndCooldown: 0
+leaveOnStop: false
+leaveOnStopCooldown: 0
+volume: 100

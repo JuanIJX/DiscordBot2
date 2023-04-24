@@ -1,10 +1,20 @@
+import { getVoiceConnection } from "@discordjs/voice";
 import { Client, Guild, Message } from "discord.js"
 import { Level } from "../../libraries/logger.js";
 import intents from "../settings/intents.js"
+import { wait } from "../../libraries/utils.mjs";
 
-Guild.prototype.fetchOrNull = async function(channelID) {
+Guild.prototype.fetchChannelOrNull = async function(channelID) {
 	try {
 		return await this.channels.fetch(channelID);
+	} catch (error) {
+		return null;
+	}
+}
+
+Guild.prototype.fetchMemberOrNull = async function(memberID) {
+	try {
+		return await this.members.fetch(memberID);
 	} catch (error) {
 		return null;
 	}
@@ -58,9 +68,18 @@ export default class DiscordManager {
 		}
 	}
 
-	stop() {
+	async stop() {
 		//this.discord.voice.connections.forEach(voiceConn => voiceConn.channel.leave());
 		if(this._started === true) {
+			this.discord.guilds.cache.forEach(guild => {
+				const voiceConnection = getVoiceConnection(guild.id);
+				if(voiceConnection) {
+					voiceConnection.destroy(true);
+					this.log(Level.DEBUG, `VoiceConnection ${guild.id} destruído`);
+				}
+			});
+			await wait(200);
+			this.discord.voice.adapters.forEach(adapter => adapter.destroy());
 			this.discord.destroy();
 			this._started = false;
 			this.log(Level.DEBUG, "Bot de discord desconectado");

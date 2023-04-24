@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/JuanIJX/DiscordBot2#readme",
   "dependencies": {
+    "@discord-player/equalizer": "^0.2.1",
     "@discord-player/extractor": "^4.2.1",
     "@discordjs/opus": "^0.9.0",
     "@discordjs/voice": "^0.16.0",

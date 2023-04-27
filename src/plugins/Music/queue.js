@@ -31,6 +31,7 @@ export default class Queue {
 
 		// Play
 		if (!this.queue.isPlaying()) {
+			// @distube/ytdl-core
 			await this.queue.node.play();
 			return true;
 		}

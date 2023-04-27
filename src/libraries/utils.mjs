@@ -349,3 +349,14 @@ export const ejc = cmd => {
 		})
 	});
 };
+
+export function stringifyNoCircular(obj, space=null) {
+	var cache = [];
+	return JSON.stringify(obj, (_, value) => {
+	if (typeof value === 'object' && value !== null) {
+		if (cache.includes(value)) return;
+		cache.push(value);
+	}
+	return value;
+	}, space);
+}

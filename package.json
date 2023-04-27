@@ -28,9 +28,11 @@
     "@discord-player/extractor": "^4.2.1",
     "@discordjs/opus": "^0.9.0",
     "@discordjs/voice": "^0.16.0",
+    "@distube/ytdl-core": "^4.11.9",
     "bufferutil": "^4.0.7",
     "discord-player": "^6.2.1",
     "discord.js": "^14.9.0",
+    "dotenv": "^16.0.3",
     "erlpack": "^0.1.4",
     "ffmpeg-static": "^5.1.0",
     "fs": "^0.0.1-security",
@@ -38,7 +40,6 @@
     "stack-trace": "^1.0.0-pre2",
     "utf-8-validate": "^6.0.3",
     "yaml": "^2.2.1",
-    "ytdl-core": "^4.11.4",
     "zlib-sync": "^0.1.8"
   },
   "devDependencies": {

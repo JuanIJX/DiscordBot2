@@ -2,6 +2,7 @@
 
 import fs from "fs"
 import path from "path";
+import 'dotenv/config'
 import { Collection } from "discord.js"
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
@@ -47,7 +48,7 @@ export default class Main {
 	constructor() {
 		// ** INIT VARS **
 		Object.defineProperty(this, '_config', { value: {...defaultConfig} });
-		Object.defineProperty(this, '_token', { value: "ODA2NTQ5NzQyODAwMjA3OTIz.YBrD-w.yjkES1scvE2cTvUlUTef4gpcoaI" });
+		Object.defineProperty(this, '_token', { value: "MTEwMDIwOTc3MjAyNTg4ODgwOQ.G-6whY.3K0BIpgMvEZoUSu7nqoH2ouK0dMiHXUiPUWJ1U" });
 		Object.defineProperty(this, '_modules', { value: new Collection() });
 		Object.defineProperty(this, '_logger', { value: new Logger(systemPaths.logsTotalPath) });
 		Object.defineProperty(this, '_discordManager', { value: new DiscordManager(this._logger, this._token) });

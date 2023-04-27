@@ -8,18 +8,31 @@ export const Level = {
 	NONE:   0,
 
 	INFO:	1 << 0,
-	TRACE:	1 << 1,
-	DEBUG:	1 << 2,
-	WARN:	1 << 3,
-	ERROR:	1 << 4,
-	FATAL:	1 << 5,
+	DEBUG:	1 << 1,
+	WARN:	1 << 2,
+	ERROR:	1 << 3,
+	FATAL:	1 << 4,
+	HIST:	1 << 5,
 	TEST:	1 << 6,
-	HIST:	1 << 7,
+	TEST2:	1 << 7,
 
 	ALLERR: 0x38,
 
 	ALL:    0xff,
 };
+
+function stringifyNoCircular(obj, space=null) {
+	var cache = [];
+	var blockedKeys = ["pipes", "client", "awaitDrainWriters", "guild", "equalizerPresets", "equalizer", "next", "secretKey", "_readableState", "_buffer", "_buffers"];
+	return JSON.stringify(obj, (key, value) => {
+	if (typeof value === 'object' && value !== null) {
+		if (blockedKeys.includes(key)) return;
+		if (cache.includes(value)) return;
+		cache.push(value);
+	}
+	return value;
+	}, space);
+}
 
 export default class Logger {
 	static _extension = "txt";
@@ -47,7 +60,7 @@ export default class Logger {
 		});
 
 		Object.defineProperty(this, "_log", { value: function(loglevel, invoker, msg, date, loglevelName) {
-			var msg = `${date.format(this.constructor._hourFormat)}` + (invoker=="" ? "" : ` [${invoker}] (${loglevelName})`) + ` ${msg}`;
+			var msg = `${date.format(this.constructor._hourFormat)}` + (invoker=="" ? "" : ` [${invoker}] (${loglevelName})`) + ` ${typeof(msg)=="object" ? stringifyNoCircular(msg, 2) : msg}`;
 			if(this.levelConsole & loglevel)
 				this._writeConsole(msg);
 			if(this.levelFile & loglevel)

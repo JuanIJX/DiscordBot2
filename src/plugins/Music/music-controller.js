@@ -1,3 +1,5 @@
+import { Level } from "../../libraries/logger.js";
+import { getDate } from "../../libraries/utils.mjs";
 import DiscordPlayer from "./DiscordPlayer.cjs"
 import Queue from "./queue.js";
 const { Player, EqualizerConfigurationPreset } = DiscordPlayer;
@@ -13,6 +15,11 @@ export default class MusicController {
 
 	async load() {
 		await this.player.extractors.loadDefault();
+
+		this.player.events.on('playerStart', (queue, track) => console.log(`${getDate().format("H:i:s")} event playerStart: ${track.title}`));
+		this.player.events.on('playerFinish', (queue, track) => console.log(`${getDate().format("H:i:s")} event playerFinish: ${track.title}`));
+		this.player.events.on('debug', msg => this.module.log(Level.TEST2, msg));
+		this.player.on('debug', msg => this.module.log(Level.TEST, msg));
 	}
 
 	/**

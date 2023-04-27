@@ -39,6 +39,8 @@ async function funcMusic(message, cmdName, args) {
 		case "test":
 			cadURL = "https://open.spotify.com/playlist/4n1hWfaXaUOUihWwsgSLcP?si=3ccbecee9ea8493b";
 			cadURL = "https://open.spotify.com/playlist/37i9dQZEVXcGlPKsPtaZre?si=270cc6f764864e0a&nd=1";
+			cadURL = "https://www.youtube.com/watch?v=978Cb1lAY0s";
+			channel = message.guild.channels.cache.get("1090594158294601810");
 			searchResult = await this.mc.search(cadURL);
 			queue = this.mc.createQueue(message.guildId);
 			await queue.addAndPlay(searchResult, channel);

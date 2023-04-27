@@ -15,7 +15,7 @@ export default class Music extends Module {
 		});
 		this.mc = new MusicController(this, this.configManager.get("queue"));
 		await this.mc.load();
-		this.registerCommand("!pu", funcMusic);
+		this.registerCommand("!po", funcMusic);
 	}
 	async onEnable() {}
 	async onDisable() {

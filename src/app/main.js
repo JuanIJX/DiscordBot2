@@ -47,13 +47,14 @@ export default class Main {
 
 	constructor() {
 		// ** INIT VARS **
+		Object.defineProperty(this, '_configMain', { value: new Config(path.join(systemPaths.basePath, systemPaths.configPath, "main.yml"), { token: "" }) });
+		Object.defineProperty(this, '_configPlugins', { value: new Config(path.join(systemPaths.basePath, systemPaths.configPath, "plugins.yml")) });
 		Object.defineProperty(this, '_config', { value: {...defaultConfig} });
-		Object.defineProperty(this, '_token', { value: "ODA2NTQ5NzQyODAwMjA3OTIz.G5mqE9.XYkWVMzdpfUi6UCU93Cj82tIW2fJZCpluHv6Q8" });
+		Object.defineProperty(this, '_token', { value: this._configMain.content.token });
 		Object.defineProperty(this, '_modules', { value: new Collection() });
 		Object.defineProperty(this, '_logger', { value: new Logger(systemPaths.logsTotalPath) });
 		Object.defineProperty(this, '_discordManager', { value: new DiscordManager(this._logger, this._token) });
 		Object.defineProperty(this, '_commandManager', { value: new CommandManager(this._discordManager) });
-		Object.defineProperty(this, '_configPlugins', { value: new Config(path.join(systemPaths.basePath, systemPaths.configPath, "plugins.yml")) });
 
 
 		//  ** FAST SETTINGS **

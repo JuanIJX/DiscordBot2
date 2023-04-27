@@ -23,7 +23,7 @@ export const Level = {
 
 function stringifyNoCircular(obj, space=null) {
 	var cache = [];
-	var blockedKeys = ["pipes", "client", "awaitDrainWriters", "guild", "equalizerPresets", "equalizer", "next", "secretKey", "_readableState", "_buffer", "_buffers"];
+	var blockedKeys = [];
 	return JSON.stringify(obj, (key, value) => {
 	if (typeof value === 'object' && value !== null) {
 		if (blockedKeys.includes(key)) return;

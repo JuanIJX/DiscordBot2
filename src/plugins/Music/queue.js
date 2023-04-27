@@ -7,9 +7,18 @@ export default class Queue {
 		this.mc = mc;
 	}
 
-	get currentTrack() {
-		return this.queue.currentTrack;
-	}
+	get currentTrack() { return this.queue.currentTrack; }
+	get tracks() { return this.queue.tracks; }
+    get history() { return this.queue.history; }
+    get dispatcher() { return this.queue.dispatcher; }
+    get node() { return this.queue.node; }
+    get filters() { return this.queue.filters; }
+    get deleted() { return this.queue.deleted; }
+    get connection() { return this.queue.connection; }
+    get estimatedDuration() { return this.queue.estimatedDuration; }
+    get durationFormatted() { return this.queue.durationFormatted; }
+    get voiceReceiver() { return this.queue.voiceReceiver; }
+    get metadata() { return this.queue.metadata; }
 
 
 	/* Controles */
@@ -49,12 +58,14 @@ export default class Queue {
 	}
 
 	jump(trackPosition) {
-		if(trackPosition > 0)
-			this.queue.moveTrack(trackPosition, 0);
-		this.skip();
+		const removed = this.remove(this.queue.tracks.at(trackPosition));
+        if (!removed) return null;
+        this.queue.tracks.store.unshift(removed);
+        this.skip();
+		return removed;
 	}
 
-	remove(trackPosition) {
+	removeTrack(trackPosition) {
 		return this.queue.removeTrack(trackPosition);
 	}
 
@@ -77,11 +88,12 @@ export default class Queue {
 		if(end >= this.tracksLength())
 			throw new Error(`El valor de final por encima del máximo`);
 
-		end -= init - 1;
-		for (let i = 0; i < end; i++)
-			this.remove(init);
-			//console.log(`${init+i} ${this.remove(init).title}`);
+		const toRemove = this.queue.tracks.store.filter((_, i) => i >= init && i<=end).map(e => e.title);
+		this.queue.tracks.store.splice(init, end - init + 1);
+		this.queue.player.events.emit('audioTracksRemove', this.queue, toRemove);
+		return toRemove;
 	}
+
 
 	/* Funciones */
 
@@ -119,7 +131,7 @@ export default class Queue {
 	}
 
 	tracksLength() {
-		return this.queue.tracks.data.length;
+		return this.queue.tracks.size;
 	}
 
 	getQueueInfo() {

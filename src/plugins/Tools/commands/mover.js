@@ -57,6 +57,7 @@ export default async function (message, cmdName, args) {
 			else {
 				await message.channel.send(getEmbedHelp(message.client));
 				message.delete();
+				this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) puso la ayuda de mover en el canal ${message.channel.name}(${message.channel.id})`);
 			}
 			break;
 		case "h":
@@ -80,7 +81,7 @@ export default async function (message, cmdName, args) {
 				else {
 					let moved = await mover(channel_origen, channel_destino);
 					message.tempReply(`Movidos: ${moved}`, delay);
-					this.log(Level.HIST, `El usuario ${message.author.tag}(${message.author.id}) movió a ${moved} usuarios del canal ${channel_origen.name}(${channel_origen.id}) al canal ${channel_destino.name}(${channel_destino.id})`);
+					this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) movió a ${moved} usuarios del canal ${channel_origen.name}(${channel_origen.id}) al canal ${channel_destino.name}(${channel_destino.id})`);
 				}
 			}
 			break;
@@ -102,7 +103,7 @@ export default async function (message, cmdName, args) {
 				else {
 					let moved = await mover(channel_origen, channel_destino);
 					message.tempReply(`Movidos: ${moved}`, delay);
-					this.log(Level.HIST, `El usuario ${message.author.tag}(${message.author.id}) movió a ${moved} usuarios del canal ${channel_origen.name}(${channel_origen.id}) al canal ${channel_destino.name}(${channel_destino.id})`);
+					this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) movió a ${moved} usuarios del canal ${channel_origen.name}(${channel_origen.id}) al canal ${channel_destino.name}(${channel_destino.id})`);
 				}
 			}
 			else {
@@ -114,7 +115,7 @@ export default async function (message, cmdName, args) {
 					else {
 						let moved = await mover(channel_origen, channel_destino);
 						message.tempReply(`Movidos: ${moved}`, delay);
-						this.log(Level.HIST, `El usuario ${message.author.tag}(${message.author.id}) movió a ${moved} usuarios del canal ${channel_origen.name}(${channel_origen.id}) al canal ${channel_destino.name}(${channel_destino.id})`);
+						this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) movió a ${moved} usuarios del canal ${channel_origen.name}(${channel_origen.id}) al canal ${channel_destino.name}(${channel_destino.id})`);
 					}
 				} catch (error) {
 					message.tempReply(error.message, delay);

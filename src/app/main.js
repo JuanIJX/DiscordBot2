@@ -64,7 +64,7 @@ export default class Main {
 
 		if(this._config.debug)
 			this._logger
-				.addLevelConsole(Level.DEBUG)
+				.addLevelConsole(Level.DEBUG | Level.HIST)
 				.addLevelFile(Level.DEBUG);
 
 		this.log(Level.INFO, [

@@ -62,6 +62,19 @@ export default class Queue {
 		return this.queue.isPlaying() && this.queue.node.skip();
 	}
 
+	async replay(trackPosition) {
+		const track = this.history.tracks.at(trackPosition);
+		if(track) {
+			this.node.insert(track, 0);
+			if(this.queue.isPlaying())
+				this.skip();
+			else
+				await this.queue.node.play();
+			return track;
+		}
+		return null;
+	}
+
 	jump(trackPosition) {
 		const removed = this.node.remove(this.queue.tracks.at(trackPosition));
         if (!removed) return null;
@@ -90,7 +103,7 @@ export default class Queue {
 
 		if(init < 0)
 			throw new Error(`El valor de inicio por debajo del mínimo`);
-		if(end >= this.tracksLength())
+		if(end >= this.tracks.size)
 			throw new Error(`El valor de final por encima del máximo`);
 
 		const toRemove = this.queue.tracks.store.filter((_, i) => i >= init && i<=end).map(e => e.title);
@@ -200,18 +213,18 @@ export default class Queue {
 	}
 
 	getCurrentInfo() {
-		return this.queue.currentTrack != null ? {
-			...this._getTrackInfo(this.queue.currentTrack),
-			timestamp: this.queue.node.getTimestamp()
+		return this.currentTrack != null ? {
+			...this._getTrackInfo(this.currentTrack),
+			timestamp: this.node.getTimestamp()
 		} : null;
 	}
 
 	getTrackList() {
-		return this.queue.tracks.data.map(track => this._getTrackInfo(track));
+		return this.tracks.data.map(track => this._getTrackInfo(track));
 	}
 
 	getHistoryList() {
-		return this.queue.history.tracks.data.map(track => this._getTrackInfo(track));
+		return this.history.tracks.data.map(track => this._getTrackInfo(track));
 	}
 
 	_getTrackInfo(track) {

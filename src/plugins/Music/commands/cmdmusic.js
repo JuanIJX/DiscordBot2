@@ -93,12 +93,30 @@ export default async function(message, cmdName, args) {
 				await message.reply(`No hay cola`);
 			else {
 				aux1 = (args.length > 1 && isInteger(args[1])) ? parseInt(args[1]) : 1;
-				if(aux1 < 1 || aux1 > queue.tracksLength())
+				if(aux1 < 1 || aux1 > queue.tracks.size)
 					await message.reply(`Índice no válida`);
 				else {
 					aux2 = queue.jump(aux1-1);
 					await message.reply(`Skip a ${aux1}`);
 					this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) saltó a la canción '${aux2.title}'`);
+				}
+			}
+			break;
+		case "replay":
+			if(!queue)
+				await message.reply(`No hay cola`);
+			else {
+				aux1 = (args.length > 1 && isInteger(args[1])) ? parseInt(args[1]) : 1;
+				if(aux1 < 1 || aux1 > queue.history.size)
+					await message.reply(`Índice no válida`);
+				else {
+					aux2 = await queue.replay(aux1-1);
+					if(!aux2)
+						await message.reply(`No se pudo poner de nuevo`);
+					else {
+						await message.reply(`Pusiste de nuevo ${aux2.title}`);
+						this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) puso de nuevo la canción '${aux2.title}'`);
+					}
 				}
 			}
 			break;
@@ -147,8 +165,8 @@ export default async function(message, cmdName, args) {
 				aux1 = (args.length > 1 && isInteger(args[1])) ? parseInt(args[1]) : 0;
 				if(aux1 == 0 && !queue.currentTrack)
 					await message.reply(`No hay canción reproduciendose para mostrar la información`);
-				else if(aux1!=0 && (aux1 < 1 || aux1 > queue.tracksLength()))
-					await message.reply(`El índice debe estár entre 1 y ${queue.tracksLength()}`);
+				else if(aux1!=0 && (aux1 < 1 || aux1 > queue.tracks.size))
+					await message.reply(`El índice debe estár entre 1 y ${queue.tracks.size}`);
 				else
 					message.channel.send(this.getEmbed(queue.embedInfo(aux1)));
 			}

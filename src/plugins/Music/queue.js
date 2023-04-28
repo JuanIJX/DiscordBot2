@@ -1,5 +1,5 @@
 import { isInteger } from "../../libraries/utils.mjs";
-import DiscordPlayer from "./DiscordPlayer.cjs"
+import DiscordPlayer, { Util } from "./DiscordPlayer.cjs"
 const { EqualizerConfigurationPreset } = DiscordPlayer
 export default class Queue {
 	constructor(queue, mc) {
@@ -164,10 +164,17 @@ export default class Queue {
 			title: 'Lista canciones',
 			fields: [
 				{
-					name: `Reproduciones pasadas (${tracks.length}) [${pag+1}/${pagMax+1}]`,
+					name: `Reproduciones pasadas [${pag+1}/${pagMax+1}]`,
 					value: tracks.length > 0 ? tracks.map((track, i) => {
 						return `${i+1}. [${track.title}](${track.url}) ${track.duration}`;
 					}).slice(sl1, sl2).join("\n") : "No hay canciones",
+				},
+				{
+					name: "Estadísticas",
+					value: [
+						`Cantidad canciones: ${tracks.length}`,
+						`Tiempo total: ${Util.buildTimeCode(Util.parseMS(this.history.tracks.store.reduce((a, c) => a + c.durationMS, 0)))}`,
+					].join("\n")
 				},
 			]
 		};

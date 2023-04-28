@@ -7,6 +7,7 @@ export default class Tools extends Module {
 	constructor() { super(...arguments); }
 
 	onLoad() {
+		this.color = 0x6600ff;
 		//this.configs.get("c1").content
 		this.configManager.add("c1", "config/file.yml", {
 			arr: false,

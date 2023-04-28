@@ -15,10 +15,8 @@ export default class MusicController {
 
 	async load() {
 		await this.player.extractors.loadDefault();
-		//this.player.events.on('playerStart', (queue, track) => console.log(`${getDate().format("H:i:s")} event playerStart: ${track.title}`));
-		//this.player.events.on('playerFinish', (queue, track) => console.log(`${getDate().format("H:i:s")} event playerFinish: ${track.title}`));
-		//this.player.events.on('debug', msg => this.module.log(Level.TEST2, msg));
-		//this.player.on('debug', msg => this.module.log(Level.TEST, msg));
+		this.player.events.on('playerStart', (queue, track) => this.module.log(Level.DEBUG, `(g: ${queue.id}) Canción iniciada '${track.title}'`));
+		this.player.events.on('playerFinish', (queue, track) => this.module.log(Level.DEBUG, `(g: ${queue.id}) Canción finalizada ' ${track.title}'`));
 	}
 
 	/**
@@ -26,6 +24,7 @@ export default class MusicController {
 	 */
 	async destroy() {
 		await this.player.destroy();
+		this.module.log(Level.DEBUG, "Player destroyed");
 	}
 
 	/**
@@ -71,7 +70,6 @@ export default class MusicController {
 	 */
 	embedEqualizer() {
 		return {
-			color: 0x00ff40,
 			title: 'Lista de equalizadores',
 			fields: [
 				{

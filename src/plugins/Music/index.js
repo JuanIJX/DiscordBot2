@@ -3,6 +3,7 @@ import MusicController from "./music-controller.js";
 import funcMusic from "./commands/cmdmusic.js"
 export default class Music extends Module {
 	async onLoad() {
+		this.color = 0xbb00ff;
 		this.configManager.add("queue", "config/queue.yml", {
 			selfDeaf: false,
 			leaveOnEmpty: false,
@@ -15,6 +16,7 @@ export default class Music extends Module {
 		});
 		this.mc = new MusicController(this, this.configManager.get("queue"));
 		await this.mc.load();
+
 		this.registerCommand("!po", funcMusic);
 	}
 	async onEnable() {}

@@ -47,6 +47,11 @@ export default class Queue {
 		return false;
 	}
 
+	clear() {
+		this.queue.tracks.clear();
+        this.queue.dispatcher?.end();
+	}
+
 	skip() {
 		/*if (queue.repeatMode === 1) {
 			queue.setRepeatMode(0);
@@ -58,7 +63,7 @@ export default class Queue {
 	}
 
 	jump(trackPosition) {
-		const removed = this.remove(this.queue.tracks.at(trackPosition));
+		const removed = this.node.remove(this.queue.tracks.at(trackPosition));
         if (!removed) return null;
         this.queue.tracks.store.unshift(removed);
         this.skip();
@@ -104,14 +109,12 @@ export default class Queue {
 	embedList(pag=0, pagSize=20) {
 		const current = this.getCurrentInfo();
 		const tracks = this.getTrackList();
-
 		const pagMax = Math.ceil(tracks.length/pagSize)-1;
 		pag = (pag < 0 || pag > pagMax) ? 0 : pag;
 		const sl1 = pag*pagSize;
 		const sl2 = sl1 + pagSize;
 
 		return {
-			color: 0x00ff40,
 			title: 'Lista canciones',
 			fields: [
 				{
@@ -121,11 +124,64 @@ export default class Queue {
 						`No hay canción`
 				},
 				{
-					name: `Tracks (${tracks.length}) [${pag+1}/${pagMax+1}]`,
+					name: `Tracks [${pag+1}/${pagMax+1}]`,
 					value: tracks.length > 0 ? tracks.map((track, i) => {
 						return `${i+1}. [${track.title}](${track.url}) ${track.duration}`;
 					}).slice(sl1, sl2).join("\n") : "No hay canciones",
 				},
+				{
+					name: "Estadísticas",
+					value: [
+						`Cantidad canciones: ${tracks.length}`,
+						`Tiempo total: ${this.queue.durationFormatted}`,
+					].join("\n")
+				},
+			]
+		};
+	}
+
+	embedHistory(pag=0, pagSize=20) {
+		const tracks = this.getHistoryList();
+		const pagMax = Math.ceil(tracks.length/pagSize)-1;
+		pag = (pag < 0 || pag > pagMax) ? 0 : pag;
+		const sl1 = pag*pagSize;
+		const sl2 = sl1 + pagSize;
+
+		return {
+			title: 'Lista canciones',
+			fields: [
+				{
+					name: `Reproduciones pasadas (${tracks.length}) [${pag+1}/${pagMax+1}]`,
+					value: tracks.length > 0 ? tracks.map((track, i) => {
+						return `${i+1}. [${track.title}](${track.url}) ${track.duration}`;
+					}).slice(sl1, sl2).join("\n") : "No hay canciones",
+				},
+			]
+		};
+	}
+
+	embedInfo(pos) {
+		const track = pos == 0 ? this.currentTrack : this.tracks.data[pos-1];
+		const trackInfo = this._getTrackInfo(track);
+		return {
+			title: 'Info canción',
+			fields: [
+				{
+					name: `Título`,
+					value: trackInfo.title,
+				},
+				{
+					name: `Autor`,
+					value: trackInfo.author,
+				},
+				{
+					name: `URL`,
+					value: trackInfo.url,
+				},
+				{
+					name: `Duracion`,
+					value: trackInfo.duration,
+				}
 			]
 		};
 	}
@@ -169,6 +225,6 @@ export default class Queue {
 	}
 
 	_getExtractorIdentifier(identifier) {
-		return identifier.substring(19, identifier.length-9);
+		return identifier?.substring(19, identifier.length-9);
 	}
 }

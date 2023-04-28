@@ -21,6 +21,7 @@ export default class Module {
 			)
 		) });
 		Object.defineProperty(this, '_started', { value: false, writable: true });
+		Object.defineProperty(this, 'color', { value: 0xffffff, writable: true, enumerable: true });
 	}
 
 	log(level, msg) { this._logger.log(level, this.name, msg); }
@@ -28,19 +29,16 @@ export default class Module {
 	get started() { return this._started === true; }
 	get _defaultEmbed() {
 		return {
-			color: 0x00ff80,
+			color: this.color,
 			author: {
-				name: "Pepino BOT",
-				icon_url: "https://ideaschungas.com/uuuu.png",
-			},
-			thumbnail: {
-				url: "https://ideaschungas.com/uuuu.png",
+				name: this.discordManager.discord.user.tag,
+				icon_url: this.discordManager.discord.user.displayAvatarURL(),
 			},
 			timestamp: new Date().toISOString(),
 			footer: {
 				text: "© IJX",
 				icon_url: "https://ideaschungas.com/uuuu.png",
-			},
+			}
 		};
 	}
 

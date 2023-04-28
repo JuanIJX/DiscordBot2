@@ -1,6 +1,5 @@
 import { ChannelType, PermissionFlagsBits } from "discord.js";
 import { Level } from "../../../libraries/logger.js";
-import { getEmbed } from "../../../app/ownfunctions.js";
 
 async function mover(channel_origen, channel_destino) {
 	let movidos = 0;
@@ -11,25 +10,19 @@ async function mover(channel_origen, channel_destino) {
 	return movidos;
 }
 
-function getEmbedHelp(client) {
-	return getEmbed({
-		color: 0x6600ff,
-		author: {
-			name: client.user.tag,
-			icon_url: client.user.displayAvatarURL(),
-		},
+function getEmbedHelp(cmdName) {
+	return {
 		fields: [
 			{
-				name: 'Ayuda del comando mover **(.m)**',
-				value: '**.m <destino>** Mueve desde donde estés a destino\n**.m <destino> <origen>** Mueve de origen a destino\n**.m h <origen>** Mueve a origen a donde estés',
+				name: `Ayuda del comando mover **(${cmdName})**`,
+				value: [
+					`**${cmdName} <destino>** Mueve desde donde estés a destino`,
+					`**${cmdName} <destino> <origen>** Mueve de origen a destino`,
+					`**${cmdName} h <origen>** Mueve a origen a donde estés`,
+				].join("\n"),
 			}
-		],
-		timestamp: new Date().toISOString(),
-		footer: {
-			text: "© IJX",
-			icon_url: client.user.displayAvatarURL(),
-		},
-	});
+		]
+	};
 }
 
 /**
@@ -49,16 +42,7 @@ export default async function (message, cmdName, args) {
 		case null:
 		case undefined:
 		case "":
-			message.member.send(getEmbedHelp(message.client));
-			break;
-		case "puthelp":
-			if(!message.member.permissions.has(PermissionFlagsBits.MoveMembers))
-				message.tempReply("No tienes permiso para usar el comando", delay);
-			else {
-				await message.channel.send(getEmbedHelp(message.client));
-				message.delete();
-				this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) puso la ayuda de mover en el canal ${message.channel.name}(${message.channel.id})`);
-			}
+			await message.channel.send(this.getEmbed(getEmbedHelp(cmdName)));
 			break;
 		case "h":
 		case "here":

@@ -1,5 +1,31 @@
 import { Level } from "../../../libraries/logger.js";
 import { isInteger } from "../../../libraries/utils.mjs";
+
+function embedHelp(cmdName) {
+	return {
+		fields: [
+			{
+				name: `Ayuda del bot musical **(${cmdName})**`,
+				value: [
+					`**${cmdName} <url>** Añade una canción a la lista y la reproduce`,
+					`**${cmdName} pause** Pausa/despausa una canción`,
+					`**${cmdName} skip** Pasa a la siguiente canción`,
+					`**${cmdName} stop** Detiene y elimina la cola`,
+					`**${cmdName} clear** Para la música y vacia la cola`,
+					`**${cmdName} remove <index>** Elimina la canción indicada`,
+					`**${cmdName} list** Muestra información del estado actual de la cola`,
+					`**${cmdName} history** Muestra la lista de las canciones reproducidas`,
+					`**${cmdName} info <index>** Muestra información sobre una canción`,
+					`**${cmdName} help** Muestra la ayuda`,
+					`**${cmdName} equalizer <[eq index]>** Muestra o pone una configuración de equalizador`,
+					`**${cmdName} jump <index>** Salta a la canción indicada`,
+					`**${cmdName} removepos <init> <end>** Elimina las canciones indicadas de init a end`,
+				].join("\n"),
+			}
+		]
+	};
+}
+
 export default async function(message, cmdName, args) {
 	let
 		channel = message.member.voice.channel,
@@ -21,23 +47,41 @@ export default async function(message, cmdName, args) {
 			queue = this.mc.createQueue(message.guildId);
 			await queue.addAndPlay(searchResult, channel);
 			break;
+		case "p":
+		case "pause":
+			if(!queue)
+				await message.reply(`No hay cola`);
+			else if(queue.node.isPaused()) {
+				queue.node.resume();
+				await message.reply("Despausado");
+				this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) despausó el bot`);
+			}
+			else {
+				queue.node.pause();
+				await message.reply("Pausado");
+				this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) pausó el bot`);
+			}
+			break;
+		case "help":
+			await message.channel.send(this.getEmbed(embedHelp(cmdName)));
+			break;
 		case "eq":
 		case "equalizer":
 			if(args.length <= 1)
-				message.channel.send(this.getEmbed(this.mc.embedEqualizer()));
+				await message.channel.send(this.getEmbed(this.mc.embedEqualizer()));
 			else if(!queue)
-				message.reply(`No hay cola`);
+				await message.reply(`No hay cola`);
 			else {
 				aux1 = (args.length > 1 && isInteger(args[1])) ? parseInt(args[1]) : 1;
 				if(aux1 < 1 || aux1 > Object.keys(this.mc.getEqualizerList()).length)
-					message.reply(`Posición de la lista erróneo`);
+					await message.reply(`Posición de la lista erróneo`);
 				else {
 					if(!queue.queue.filters.equalizer)
-						message.reply(`El equalizador no está disponible`);
+						await message.reply(`El equalizador no está disponible`);
 					else {
 						//.setEQ([{ band: 0, gain: 0.78 }]);
 						queue.queue.filters.equalizer.setEQ(this.mc.getEqualizerList(aux1-1))
-						message.reply(`Equalizer: ${Object.keys(this.mc.getEqualizerList()[aux1-1])}`);
+						await message.reply(`Equalizer: ${Object.keys(this.mc.getEqualizerList()[aux1-1])}`);
 						this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) estableció el equalizador a ${Object.keys(this.mc.getEqualizerList()[aux1-1])}`);
 					}
 				}
@@ -46,30 +90,30 @@ export default async function(message, cmdName, args) {
 		case "j":
 		case "jump":
 			if(!queue)
-				message.reply(`No hay cola`);
+				await message.reply(`No hay cola`);
 			else {
 				aux1 = (args.length > 1 && isInteger(args[1])) ? parseInt(args[1]) : 1;
 				if(aux1 < 1 || aux1 > queue.tracksLength())
-					message.reply(`Posición no válida`);
+					await message.reply(`Índice no válida`);
 				else {
 					aux2 = queue.jump(aux1-1);
-					message.reply(`Skip a ${aux1}`);
+					await message.reply(`Skip a ${aux1}`);
 					this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) saltó a la canción '${aux2.title}'`);
 				}
 			}
 			break;
 		case "removepos":
 			if(!queue)
-				message.reply(`No hay cola`);
+				await message.reply(`No hay cola`);
 			else if(args.length < 3)
-				message.reply(`Faltan parámetros`);
+				await message.reply(`Faltan parámetros`);
 			else {
 				try {
 					queue.removePositions(parseInt(args[1])-1, parseInt(args[2])-1);
-					message.reply(`Canciones eliminadas: ${parseInt(args[2]) + 1 - parseInt(args[1])}`);
+					await message.reply(`Canciones eliminadas: ${parseInt(args[2]) + 1 - parseInt(args[1])}`);
 					this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) eliminó ${parseInt(args[2]) + 1 - parseInt(args[1])} canciones`);
 				} catch (error) {
-					message.reply(error.message);
+					await message.reply(error.message);
 				}
 			}
 			break;
@@ -77,58 +121,85 @@ export default async function(message, cmdName, args) {
 		case "remove":
 			aux1 = queue?.removeTrack((args.length > 1 && isInteger(args[1])) ? parseInt(args[1])-1 : 0);
 			if(aux1) {
-				message.reply(`Canción eliminada: ${aux1.title}`);
+				await message.reply(`Canción eliminada: ${aux1.title}`);
 				this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) eliminó de la lista la canción ${aux1.title}`);
 			}
 			else
-				message.reply(`No se eliminó nada`);
+				await message.reply(`No se eliminó nada`);
 			break;
 		case "l":
 		case "list":
 			if(!queue)
-				message.reply(`No hay cola`);
+				await message.reply(`No hay cola`);
 			else
 				message.channel.send(this.getEmbed(queue.embedList((args.length > 1 && isInteger(args[1])) ? parseInt(args[1])-1 : 0, 10)));
 			break;
+		case "history":
+			if(!queue)
+				await message.reply(`No hay cola`);
+			else
+				message.channel.send(this.getEmbed(queue.embedHistory((args.length > 1 && isInteger(args[1])) ? parseInt(args[1])-1 : 0, 10)));
+			break;
+		case "info":
+			if(!queue)
+				await message.reply(`No hay cola`);
+			else {
+				aux1 = (args.length > 1 && isInteger(args[1])) ? parseInt(args[1]) : 0;
+				if(aux1 == 0 && !queue.currentTrack)
+					await message.reply(`No hay canción reproduciendose para mostrar la información`);
+				else if(aux1!=0 && (aux1 < 1 || aux1 > queue.tracksLength()))
+					await message.reply(`El índice debe estár entre 1 y ${queue.tracksLength()}`);
+				else
+					message.channel.send(this.getEmbed(queue.embedInfo(aux1)));
+			}
+			break;
 		case "stop":
 			if(!queue)
-				message.reply(`No hay cola`);
+				await message.reply(`No hay cola`);
 			else {
 				queue.queue.delete();
 				this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) detuvo bot de musica`);
 			}
 			break;
+		case "clear":
+			if(!queue)
+				await message.reply(`No hay cola`);
+			else {
+				queue.clear();
+				this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) reseteó la cola`);
+			}
+			break;
 		case "s":
 		case "skip":
 			if(!queue)
-				message.reply(`No hay cola`);
+				await message.reply(`No hay cola`);
 			else {
 				queue.skip();
-				message.reply(`Skipped`);
+				await message.reply(`Skipped`);
 				this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) skipeó la canción`);
 			}
 			break;
 		default:
 			if(!channel)
-				message.reply(`Debes estar en un canal de voz`);
+				await message.reply(`Debes estar en un canal de voz`);
 			else {
 				cadURL = message.content.substr(cmdName.length).trim();
 				if(!cadURL)
-					message.reply(`No se proporcionó una canción`);
+					await message.reply(`No se proporcionó una canción`);
 				else {
 					searchResult = await this.mc.search(cadURL, { requestedBy: message.member });
 					if (!searchResult || !searchResult.hasTracks())
-						message.reply(`No se encuentra la canción`);
+						await message.reply(`No se encuentra la canción`);
 					else {
 						try {
 							queue = this.mc.createQueue(message.guildId);
 							if(await queue.addAndPlay(searchResult, channel))
-								message.reply(`Reproduciendo`);
+								await message.reply(`Reproduciendo`);
 							else
-								message.reply(`Añadido a la cola`);
+								await message.reply(`Añadido a la cola`);
 							this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) añadió ${searchResult.playlist ? `${searchResult.tracks.length} canciones` : `'${searchResult.tracks[0].title}'`}`);
 						} catch (error) {
-							message.reply(`Error`);
+							await message.reply(`Error`);
 							this.log(Level.DEBUG, error);
 						}
 					}

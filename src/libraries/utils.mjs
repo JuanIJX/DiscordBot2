@@ -306,30 +306,16 @@ export function base64_decode(data) {
 /**
  * Ajuste decimal de un número.
  * 
- * @param {String}  tipo  El tipo de ajuste (round, floor, ceil).
- * @param {Number}  valor El numero.
+ * @param {Number}  value El numero.
  * @param {Integer} exp   El exponente (el logaritmo 10 del ajuste base).
+ * @param {String}  type  El tipo de ajuste (round, floor, ceil).
  * @returns {Number} El valor ajustado.
  */
-export function decimalAdjust(type, value, exp) {
-	// Si el exp no está definido o es cero...
-	if (typeof exp === 'undefined' || +exp === 0)
-		return Math[type](value);
-
-	value = +value;
-	exp = +exp;
-
-	// Si el valor no es un número o el exp no es un entero...
-	if (isNaN(value) || !(typeof exp === 'number' && exp % 1 === 0))
-		return NaN;
-
-	// Shift
-	value = value.toString().split('e');
-	value = Math[type](+(value[0] + 'e' + (value[1] ? (+value[1] - exp) : -exp)));
-	
-	// Shift back
-	value = value.toString().split('e');
-	return +(value[0] + 'e' + (value[1] ? (+value[1] + exp) : exp));
+export function decimalAdjust(value, exp=0, type="round") {
+	if(!["round", "ceil", "floor"].includes(type))
+		throw new Error("Invalid type");
+	const mult = Math.pow(10, exp >=0 ? parseInt(exp) : 0);
+	return Math[type](value * mult) / mult;
 }
 
 export function secondsToDhms(seconds) {

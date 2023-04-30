@@ -1,5 +1,4 @@
 import { Level } from "../../libraries/logger.js";
-import { getDate } from "../../libraries/utils.mjs";
 import DiscordPlayer from "./DiscordPlayer.cjs"
 import Queue from "./queue.js";
 const { Player, EqualizerConfigurationPreset } = DiscordPlayer;
@@ -84,3 +83,9 @@ export default class MusicController {
 		return pos===undefined ? EqualizerConfigurationPreset : EqualizerConfigurationPreset[Object.keys(EqualizerConfigurationPreset)[pos]];
 	}
 }
+
+
+/*
+import { generateDependencyReport } from "@discordjs/voice"
+console.log(generateDependencyReport()); 
+ */

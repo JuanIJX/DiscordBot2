@@ -1,5 +1,5 @@
 import { Level } from "../../../libraries/logger.js";
-import { isInteger } from "../../../libraries/utils.mjs";
+import { decimalAdjust, isFloat, isInteger } from "../../../libraries/utils.mjs";
 
 function embedHelp(cmdName) {
 	return {
@@ -12,6 +12,7 @@ function embedHelp(cmdName) {
 					`**${cmdName} skip** Pasa a la siguiente canción`,
 					`**${cmdName} stop** Detiene y elimina la cola`,
 					`**${cmdName} clear** Para la música y vacia la cola`,
+					`**${cmdName} seek <minuto>** Pone la canción en el minuto deseado`,
 					`**${cmdName} remove <index>** Elimina la canción indicada`,
 					`**${cmdName} list** Muestra información del estado actual de la cola`,
 					`**${cmdName} history** Muestra la lista de las canciones reproducidas`,
@@ -41,11 +42,29 @@ export default async function(message, cmdName, args) {
 				return;
 			cadURL = "https://open.spotify.com/playlist/4n1hWfaXaUOUihWwsgSLcP?si=3ccbecee9ea8493b";
 			cadURL = "https://open.spotify.com/playlist/37i9dQZEVXcGlPKsPtaZre?si=270cc6f764864e0a&nd=1";
-			//cadURL = "https://www.youtube.com/watch?v=978Cb1lAY0s";
+			cadURL = "https://www.youtube.com/watch?v=978Cb1lAY0s";
 			//channel = message.guild.channels.cache.get("1090594158294601810");
 			searchResult = await this.mc.search(cadURL);
 			queue = this.mc.createQueue(message.guildId);
 			await queue.addAndPlay(searchResult, channel);
+			console.log("hecho");
+			break;
+		case "seek":
+			if(!queue)
+				await message.reply(`No hay cola`);
+			else if(!queue.queue.isPlaying())
+				await message.reply(`No hay nada en reproducción`);
+			else {
+				aux1 = (args.length > 1 && isFloat(args[1])) ? parseFloat(args[1])*60000 : 0;
+				if(aux1 < 0 || aux1 > (queue.node.getTimestamp().total.value - 1000))
+					await message.reply(`El valor no debe exceder la duración de la canción ${decimalAdjust((queue.node.getTimestamp().total.value-1000)/60000, 2, "floor")} expresado en minutos`);
+				else {
+					await queue.node.seek(aux1);
+					aux2 = queue.node.getTimestamp().current;
+					await message.reply(`Se fue a la posición de la canción ${aux2.label}`);
+					this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) puso la cancion en el tiempo: ${aux2.label}`);
+				}
+			}
 			break;
 		case "p":
 		case "pause":

@@ -9,7 +9,6 @@ const require = createRequire(import.meta.url);
 const PackageJson = require("../../package.json");
 
 // Personal imports
-import { wait } from "../libraries/utils.mjs";
 import { createDir } from "./ownfunctions.js";
 import Logger, { Level } from "../libraries/logger.js";
 import KeyB from "../libraries/KeyB.js"

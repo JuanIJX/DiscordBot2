@@ -6,7 +6,6 @@ import ConfigManager from "./manager/configmanager.js"
 import CommandManager from "./manager/commandmanager.js"
 import EventManager from "./manager/eventmanager.js"
 import DiscordManager from "./manager/discordmanager.js";
-import { wait } from "../libraries/utils.mjs";
 export default class Module {
 	constructor() {
 		// Variables

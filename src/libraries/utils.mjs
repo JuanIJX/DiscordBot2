@@ -108,6 +108,7 @@ String.prototype.getExt = function() {
 	return this;
 };
 String.prototype.zeroPad = function(n = 2) { return (getZero(n)+this).slice(-1 * (n < this.length ? this.length : n)); };
+String.prototype.suspensivos = function(max, chars="...") { return this.length > max ? this.substring(0, max)+chars : this; }
 
 // Number
 Number.prototype.zeroPad = function(n = 2) { return (this+"").zeroPad(n) };

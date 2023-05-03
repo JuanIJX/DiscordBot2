@@ -24,6 +24,7 @@ export default class Module {
 	}
 
 	log(level, msg) { this._logger.log(level, this.name, msg); }
+	get thisPath() { return this._path; }
 	get name() { return this.constructor.name; }
 	get started() { return this._started === true; }
 	get _defaultEmbed() {

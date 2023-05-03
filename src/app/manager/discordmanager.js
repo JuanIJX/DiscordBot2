@@ -24,17 +24,17 @@ Message.prototype.tempReply = function(msgReply, time=-1, delOnlyReply=false) {
 	return new Promise(async (resolve, reject) => {
 		const msgObject = this;
 		try {
-			let reply = await msgObject.reply(msgReply);
+			const reply = await msgObject.reply(msgReply);
 			if(time >= 0) {
 				setTimeout(async () => {
-					await reply.delete();
+					let x = await reply.delete();
 					if(!delOnlyReply)
 						await msgObject.delete();
-					resolve();
+					resolve(x);
 				}, time);
 			}
 			else
-				resolve();
+				resolve(reply);
 		} catch (error) {
 			reject(error);
 		}

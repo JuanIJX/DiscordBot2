@@ -182,6 +182,7 @@ export default async function(message, cmdName, args) {
 				message.channel.send(this.getEmbed(queue.embedList((args.length > 1 && isInteger(args[1])) ? parseInt(args[1])-1 : 0, 20)));
 			}
 			break;
+		case "h":
 		case "history":
 			if(!queue)
 				await message.reply(`No hay cola`);

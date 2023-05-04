@@ -1,6 +1,5 @@
 import { isInteger } from "../../libraries/utils.mjs";
-import DiscordPlayer, { Util } from "./DiscordPlayer.cjs"
-const { EqualizerConfigurationPreset } = DiscordPlayer
+import { Util } from "./DiscordPlayer.cjs"
 export default class Queue {
 	constructor(queue, mc) {
 		this.queue = queue;
@@ -119,7 +118,7 @@ export default class Queue {
 		return !!this.queue.connection;
 	}
 
-	embedList(pag=0, pagSize=20) {
+	embedList(pag=0, pagSize=10) {
 		const current = this.getCurrentInfo();
 		const tracks = this.getTrackList();
 		const pagMax = Math.ceil(tracks.length/pagSize)-1;
@@ -129,19 +128,21 @@ export default class Queue {
 
 		return {
 			title: 'Lista canciones',
+			description: [
+				`**Canción actual**`,
+				this.queue.currentTrack!=null ?
+					`[${current.title}](${current.url}) ${current.timestamp.current.label}/${current.duration}` :
+					`No hay canción`,
+				``,
+				`**Tracks [${pagMax == -1 ? 0 : pag+1}/${pagMax+1}]**`,
+				tracks.length > 0 ?
+					tracks
+						.slice(sl1, sl2)
+						.map((track, i) => `**${i+1}.** [${track.title.suspensivos(64)}](${track.url}) ${track.duration}`)
+						.join("\n") :
+					"No hay canciones"
+			].join("\n").suspensivos(4096, "#!#"),
 			fields: [
-				{
-					name: "Canción actual:",
-					value: this.queue.currentTrack!=null ?
-						`[${current.title}](${current.url}) ${current.timestamp.current.label}/${current.duration}` :
-						`No hay canción`
-				},
-				{
-					name: `Tracks [${pag+1}/${pagMax+1}]`,
-					value: tracks.length > 0 ? tracks.map((track, i) => {
-						return `${i+1}. [${track.title}](${track.url}) ${track.duration}`;
-					}).slice(sl1, sl2).join("\n") : "No hay canciones",
-				},
 				{
 					name: "Estadísticas",
 					value: [
@@ -162,13 +163,16 @@ export default class Queue {
 
 		return {
 			title: 'Lista canciones',
+			description: [
+				`**Reproduciones pasadas [${pagMax == -1 ? 0 : pag+1}/${pagMax+1}]**`,
+				tracks.length > 0 ?
+					tracks
+						.slice(sl1, sl2)
+						.map((track, i) => `${i+1}. [${track.title.suspensivos(64)}](${track.url}) ${track.duration}`)
+						.join("\n")  :
+					"No hay canciones"
+			].join("\n").suspensivos(4096, "#!#"),
 			fields: [
-				{
-					name: `Reproduciones pasadas [${pag+1}/${pagMax+1}]`,
-					value: tracks.length > 0 ? tracks.map((track, i) => {
-						return `${i+1}. [${track.title}](${track.url}) ${track.duration}`;
-					}).slice(sl1, sl2).join("\n") : "No hay canciones",
-				},
 				{
 					name: "Estadísticas",
 					value: [
@@ -183,8 +187,9 @@ export default class Queue {
 	embedInfo(pos) {
 		const track = pos == 0 ? this.currentTrack : this.tracks.data[pos-1];
 		const trackInfo = this._getTrackInfo(track);
-		return {
+		const embed = {
 			title: 'Info canción',
+			thumbnail: { url: trackInfo.thumbnail }, // No se ha comprobado que pasa si no hay thumbail o si es posible que no haya
 			fields: [
 				{
 					name: `Título`,
@@ -199,11 +204,18 @@ export default class Queue {
 					value: trackInfo.url,
 				},
 				{
-					name: `Duracion`,
+					name: `Duración`,
 					value: trackInfo.duration,
 				}
 			]
 		};
+		if(trackInfo.requestedBy) {
+			embed.fields.push({
+				name: `Subido por`,
+				value: `${trackInfo.requestedBy.tag} (${trackInfo.requestedBy.id})`,
+			});
+		}
+		return embed;
 	}
 
 	tracksLength() {
@@ -239,8 +251,10 @@ export default class Queue {
 			title: track.title,
 			author: track.author,
 			url: track.url,
+			thumbnail: track.thumbnail,
 			duration: track.duration,
-			extractor: this._getExtractorIdentifier(track.extractor.identifier)
+			extractor: this._getExtractorIdentifier(track.extractor.identifier),
+			requestedBy: track.requestedBy
 		};
 	}
 

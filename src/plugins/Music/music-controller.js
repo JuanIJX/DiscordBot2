@@ -1,5 +1,6 @@
 import { Level } from "../../libraries/logger.js";
 import DiscordPlayer from "./DiscordPlayer.cjs"
+import PlaylistManager from "./myplaylist.js";
 import Queue from "./queue.js";
 const { Player, EqualizerConfigurationPreset } = DiscordPlayer;
 export default class MusicController {
@@ -14,6 +15,10 @@ export default class MusicController {
 
 	async load() {
 		await this.player.extractors.loadDefault();
+
+		PlaylistManager.player = this.player;
+		PlaylistManager.pluginPath = this.module.thisPath;
+
 		this.player.events.on('playerStart', (queue, track) => this.module.log(Level.DEBUG, `(g: ${queue.id}) Canción iniciada '${track.title}'`));
 		this.player.events.on('playerFinish', (queue, track) => this.module.log(Level.DEBUG, `(g: ${queue.id}) Canción finalizada ' ${track.title}'`));
 	}
@@ -32,8 +37,8 @@ export default class MusicController {
 	 * @param {string} cad URL o cadena de búsqueda
 	 * @returns Promise<SearchResult>
 	 */
-	search(cad) {
-		return this.player.search(cad);
+	search(cad, options={}) {
+		return this.player.search(cad, options);
 	}
 	
 	/**

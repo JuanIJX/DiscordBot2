@@ -1,5 +1,6 @@
 import { Level } from "../../../libraries/logger.js";
 import { decimalAdjust, isFloat, isInteger } from "../../../libraries/utils.mjs";
+import funcPlaylist from "./cmdmusicplaylist.js"
 
 function embedHelp(cmdName) {
 	return {
@@ -36,18 +37,26 @@ export default async function(message, cmdName, args) {
 		aux1, aux2;
 
 	switch (args[0]) {
+		case "t2":
+			if(message.author.id != "171058039065935872") return;
+			console.log(queue?.queue.currentTrack);
+			break;
 		case "t":
 		case "test":
-			if(message.author.id != "171058039065935872")
-				return;
+			if(message.author.id != "171058039065935872") return;
 			cadURL = "https://open.spotify.com/playlist/4n1hWfaXaUOUihWwsgSLcP?si=3ccbecee9ea8493b";
 			cadURL = "https://open.spotify.com/playlist/37i9dQZEVXcGlPKsPtaZre?si=270cc6f764864e0a&nd=1";
 			cadURL = "https://www.youtube.com/watch?v=978Cb1lAY0s";
+			//cadURL = "https://www.youtube.com/watch?v=g7i1pkf-CbY&list=FLSXkyNPfZS2feOSwk-ZySiA&index=9&pp=gAQB&ab_channel=capoVEVO";
 			//channel = message.guild.channels.cache.get("1090594158294601810");
-			searchResult = await this.mc.search(cadURL);
+			searchResult = await this.mc.search(cadURL, { requestedBy: message.author });
 			queue = this.mc.createQueue(message.guildId);
 			await queue.addAndPlay(searchResult, channel);
 			console.log("hecho");
+			break;
+		case "pl":
+		case "playlist":
+			await funcPlaylist.bind(this)(message, args.shift(), args, cmdName);
 			break;
 		case "seek":
 			if(!queue)
@@ -168,8 +177,10 @@ export default async function(message, cmdName, args) {
 		case "list":
 			if(!queue)
 				await message.reply(`No hay cola`);
-			else
-				message.channel.send(this.getEmbed(queue.embedList((args.length > 1 && isInteger(args[1])) ? parseInt(args[1])-1 : 0, 10)));
+			else {
+				//console.log(queue.getQueueInfo());
+				message.channel.send(this.getEmbed(queue.embedList((args.length > 1 && isInteger(args[1])) ? parseInt(args[1])-1 : 0, 20)));
+			}
 			break;
 		case "history":
 			if(!queue)
@@ -177,6 +188,7 @@ export default async function(message, cmdName, args) {
 			else
 				message.channel.send(this.getEmbed(queue.embedHistory((args.length > 1 && isInteger(args[1])) ? parseInt(args[1])-1 : 0, 10)));
 			break;
+		case "i":
 		case "info":
 			if(!queue)
 				await message.reply(`No hay cola`);
@@ -224,7 +236,7 @@ export default async function(message, cmdName, args) {
 				if(!cadURL)
 					await message.reply(`No se proporcionó una canción`);
 				else {
-					searchResult = await this.mc.search(cadURL, { requestedBy: message.member });
+					searchResult = await this.mc.search(cadURL, { requestedBy: message.author });
 					if (!searchResult || !searchResult.hasTracks())
 						await message.reply(`No se encuentra la canción`);
 					else {

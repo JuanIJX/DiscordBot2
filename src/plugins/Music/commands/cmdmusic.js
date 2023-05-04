@@ -39,7 +39,8 @@ export default async function(message, cmdName, args) {
 	switch (args[0]) {
 		case "t2":
 			if(message.author.id != "171058039065935872") return;
-			console.log(queue?.queue.currentTrack);
+			//console.log(queue?.queue.currentTrack);
+			console.log(this.mc.player.scanDeps());
 			break;
 		case "t":
 		case "test":

@@ -2,3 +2,5 @@
 /logs
 /src/config
 /src/test
+/libs
+package-lock.json

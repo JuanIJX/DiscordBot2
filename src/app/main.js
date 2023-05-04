@@ -1,8 +1,8 @@
 'use strict'
 
+import 'dotenv/config'
 import fs from "fs"
 import path from "path";
-import 'dotenv/config'
 import { Collection } from "discord.js"
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);

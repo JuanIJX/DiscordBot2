@@ -1,8 +1,7 @@
 import { Level } from "../../libraries/logger.js";
-import DiscordPlayer from "./DiscordPlayer.cjs"
+import { Player, EqualizerConfigurationPreset } from "./DiscordPlayer.cjs"
 import PlaylistManager from "./myplaylist.js";
 import Queue from "./queue.js";
-const { Player, EqualizerConfigurationPreset } = DiscordPlayer;
 export default class MusicController {
 	constructor(module, config) {
 		this.player = new Player(module.discordManager.discord, {

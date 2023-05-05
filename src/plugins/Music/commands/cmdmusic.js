@@ -110,8 +110,9 @@ export default async function(message, cmdName, args) {
 					else {
 						//.setEQ([{ band: 0, gain: 0.78 }]);
 						queue.queue.filters.equalizer.setEQ(this.mc.getEqualizerList(aux1-1))
-						await message.reply(`Equalizer: ${Object.keys(this.mc.getEqualizerList()[aux1-1])}`);
-						this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) estableció el equalizador a ${Object.keys(this.mc.getEqualizerList()[aux1-1])}`);
+						aux2 = Object.keys(this.mc.getEqualizerList())[aux1-1];
+						await message.reply(`Equalizer: ${aux2}`);
+						this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) estableció el equalizador a ${aux2}`);
 					}
 				}
 			}

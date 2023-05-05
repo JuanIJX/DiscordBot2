@@ -36,7 +36,3 @@ export function createDir(dir) {
 	if(!fs.existsSync(dir))
 		fs.mkdirSync(dir);
 }
-
-export function getEmbed(...emb) {
-	return { embeds: emb };
-}

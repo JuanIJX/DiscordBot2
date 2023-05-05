@@ -7,8 +7,8 @@
   "scripts": {
     "start": "node src/run.js",
     "debug": "node src/run.js -debug",
-    "test": "node src/test/index.js",
-    "devtest": "nodemon src/test/index.js"
+    "test": "node test/index.js",
+    "devtest": "nodemon test/index.js"
   },
   "repository": {
     "type": "git",

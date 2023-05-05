@@ -1,10 +1,13 @@
 import { wait } from "./libraries/utils.mjs";
 
-export default async (main, cadena, cmdName, args) => {
+export default async function(cadena, cmdName, args) {
 	switch (cmdName) {
+		case "test":
+			console.log(this.discordManager.discord.application.commands);
+			break;
 		case "pl":
 			console.log(`Lista de plugins:`);
-			main.modules.forEach((value, key) => {
+			this.modules.forEach((value, key) => {
 				console.log(`- ${key}: ${value.started ? "ON" : "OFF"}`);
 			});
 			break;

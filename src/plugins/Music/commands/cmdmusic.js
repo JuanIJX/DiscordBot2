@@ -189,7 +189,7 @@ export default async function(message, cmdName, args) {
 			if(!queue)
 				await message.reply(`No hay cola`);
 			else
-				message.channel.send(this.getEmbed(queue.embedHistory((args.length > 1 && isInteger(args[1])) ? parseInt(args[1])-1 : 0, 10)));
+				message.channel.send(this.getEmbed(queue.embedHistory((args.length > 1 && isInteger(args[1])) ? parseInt(args[1])-1 : 0, 20)));
 			break;
 		case "i":
 		case "info":

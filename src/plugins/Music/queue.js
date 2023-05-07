@@ -162,7 +162,7 @@ export default class Queue {
 		const sl2 = sl1 + pagSize;
 
 		return {
-			title: 'Lista canciones',
+			title: 'Historial de canciones',
 			description: [
 				`**Reproduciones pasadas [${pagMax == -1 ? 0 : pag+1}/${pagMax+1}]**`,
 				tracks.length > 0 ?

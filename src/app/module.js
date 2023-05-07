@@ -42,7 +42,7 @@ export default class Module {
 		};
 	}
 
-	async _load(logger, discordManager, commandManager) {
+	async _load(logger, discordManager, commandManager, slashManager) {
 		if(this._loaded === true)
 			return;
 		if(!(logger instanceof Logger))
@@ -54,7 +54,8 @@ export default class Module {
 
 		Object.defineProperty(this, '_logger', { value: logger });
 		Object.defineProperty(this, '_loaded', { value: true });
-		Object.defineProperty(this, '_commandManager', { value: commandManager, enumerable: true });
+		Object.defineProperty(this, '_commandManager', { value: commandManager });
+		Object.defineProperty(this, '_slashManager', { value: slashManager });
 		Object.defineProperty(this, 'discordManager', { value: discordManager, enumerable: true });
 		Object.defineProperty(this, 'configManager', { value: new ConfigManager(this._path), enumerable: true });
 		Object.defineProperty(this, 'eventManager', { value: new EventManager(), enumerable: true });
@@ -65,6 +66,7 @@ export default class Module {
 	async start() {
 		if(!this._started) {
 			this._commandManager.enableModule(this.name);
+			this._slashManager.enableModule(this.name);
 			await this.onEnable();
 			this.log(Level.INFO, `Plugin '${this.name}' iniciado`);
 			this._started = true;
@@ -73,15 +75,25 @@ export default class Module {
 	async stop() {
 		if(this._started) {
 			this._commandManager.disableModule(this.name);
+			this._slashManager.disableModule(this.name);
 			await this.onDisable();
 			this.log(Level.INFO, `Plugin '${this.name}' detenido`);
 			this._started = false;
 		}
 	}
 
+	getEmbed(...objs) {
+		return { embeds: objs.map(obj => obj.assign(this._defaultEmbed)) };
+	}
+
+	async onLoad() {}
+	async onEnable() {}
+	async onDisable() {}
+
+	// Commands
 	registerCommand(name, action) {
 		try {
-			this._commandManager.addCommand(name, this, action.bind(this));
+			this._commandManager.addCommand(name, this, action);
 		} catch (error) {
 			this.log(Level.ERROR, error.message);
 		}
@@ -92,12 +104,4 @@ export default class Module {
 		for (const [key, value] of Object.entries(commands))
 			this.registerCommand(key, value);
 	}
-
-	getEmbed(...objs) {
-		return { embeds: objs.map(obj => obj.assign(this._defaultEmbed)) };
-	}
-
-	async onLoad() {}
-	async onEnable() {}
-	async onDisable() {}
 }

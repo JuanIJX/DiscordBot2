@@ -4,6 +4,7 @@ export default async function(cadena, cmdName, args) {
 	switch (cmdName) {
 		case "test":
 			console.log(this.discordManager.discord.application.commands);
+			//generateDependencyReport();
 			break;
 		case "pl":
 			console.log(`Lista de plugins:`);

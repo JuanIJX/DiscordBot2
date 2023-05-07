@@ -85,7 +85,7 @@ export default class Main {
 		//  ** SLOW SETTINGS **
 
 		await this.discordManager.start();
-		await this.slashManager.load(client.application.commands);
+		await this.slashManager.load(this.discordManager.discord.application.commands);
 		await this._loadModules();
 		await this._startModules();
 

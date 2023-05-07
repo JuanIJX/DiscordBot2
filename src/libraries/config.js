@@ -2,13 +2,6 @@ import fs from "fs"
 import path from "path"
 import YAML from "yaml"
 
-String.prototype.getExt = function() {
-	const pos = this.lastIndexOf(".");
-	if(pos!=-1)
-		return this.substring(pos+1);
-	return this;
-};
-
 function cloneObject(object) {
 	return JSON.parse(JSON.stringify(object));
 }
@@ -22,7 +15,7 @@ export default class Config {
 		if(!typeof(defaultData)=="object")
 			throw new Error("Se esperaba un objeto como segundo parámetro");
 
-		Object.defineProperty(this, "ext", { value: ruta.getExt() });
+		Object.defineProperty(this, "ext", { value: path.extname(ruta).substring(1) });
 		if(!this.constructor.permitedExtensions.includes(this.ext))
 			throw new Error("Extensión no permitida");
 

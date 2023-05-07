@@ -3,7 +3,7 @@
 import 'dotenv/config'
 import fs from "fs"
 import path from "path";
-import { Collection } from "discord.js"
+import { Collection, Events } from "discord.js"
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const PackageJson = require("../../package.json");
@@ -17,10 +17,11 @@ import defaultConfig from "./settings/defaultconfig.js";
 import systemPaths from "./settings/dynamicpaths.js";
 import commands from "../commands.js";
 
-import DiscordManager from "./manager/discordmanager.js";
 import Module from "./module.js";
 import Config from "../libraries/config.js";
+import DiscordManager from "./manager/discordmanager.js";
 import CommandManager from "./manager/commandmanager.js";
+import SlashManager from "./manager/slashcommandmanager.js";
 import { EOL } from "os";
 
 
@@ -53,13 +54,15 @@ export default class Main {
 		Object.defineProperty(this, '_modules', { value: new Collection() });
 		Object.defineProperty(this, '_logger', { value: new Logger(systemPaths.logsTotalPath) });
 		Object.defineProperty(this, '_discordManager', { value: new DiscordManager(this._logger, this._token) });
-		Object.defineProperty(this, '_commandManager', { value: new CommandManager(this._discordManager) });
+		Object.defineProperty(this, '_commandManager', { value: new CommandManager(this._logger) });
+		Object.defineProperty(this, '_slashManager', { value: new SlashManager(this._logger) });
 
 
 		//  ** FAST SETTINGS **
 		Object.assign(this._config, this._readCommandLineArgs());
 
-		this.discordManager.discord.on("messageCreate", m => this._commandManager.commandHandler(m));
+		this.discordManager.discord.on(Events.MessageCreate, e => this._commandManager.commandHandler(e));
+		this.discordManager.discord.on(Events.InteractionCreate, e => this._slashManager.commandHandler(e));
 
 		if(this._config.debug)
 			this._logger
@@ -74,7 +77,7 @@ export default class Main {
 		]);
 
 		KeyB.onClose(async () => { await this._stop(); });
-		KeyB.bucle((...args) => commands(this, ...args));
+		KeyB.bucle(commands.bind(this));
 		this.log(Level.DEBUG, "Iniciado escucha de comandos de consola");
 	}
 
@@ -82,6 +85,7 @@ export default class Main {
 		//  ** SLOW SETTINGS **
 
 		await this.discordManager.start();
+		await this.slashManager.load(client.application.commands);
 		await this._loadModules();
 		await this._startModules();
 
@@ -94,6 +98,7 @@ export default class Main {
 	get modules() { return this._modules; }
 	get discordManager() { return this._discordManager; }
 	get commandManager() { return this._commandManager; }
+	get slashManager() { return this._slashManager; }
 
 	async stop() {
 		await KeyB.stop();
@@ -145,7 +150,7 @@ export default class Main {
 					continue;
 
 				// Cargado con éxito
-				await instanciedModule._load(this._logger, this.discordManager, this.commandManager);
+				await instanciedModule._load(this._logger, this.discordManager, this.commandManager, this.slashManager);
 				this.modules.set(classModuleName, instanciedModule);
 				this._logger.log(Level.DEBUG, this.name, `Plugin '${classModuleName}' cargado`);
 			} catch (error) {

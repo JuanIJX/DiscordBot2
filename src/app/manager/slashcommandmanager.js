@@ -118,6 +118,7 @@ export default class SlashManager {
 
 	// Controladores
 	handler(interaction) {
+		if(!interaction.isChatInputCommand()) return;
 		if(interaction.channel.type == ChannelType.DM || interaction.channel.type == ChannelType.GroupDM) return;
 		if(interaction.user.id == interaction.client.user.id) return;
 

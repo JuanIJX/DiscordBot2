@@ -4,6 +4,7 @@ import { get as stackTraceGet } from "stack-trace"
 import Logger, { Level } from "../libraries/logger.js";
 import ConfigManager from "./manager/configmanager.js"
 import CommandManager from "./manager/commandmanager.js"
+import SlashManager from "./manager/slashcommandmanager.js"
 import EventManager from "./manager/eventmanager.js"
 import DiscordManager from "./manager/discordmanager.js";
 export default class Module {
@@ -50,6 +51,8 @@ export default class Module {
 		if(!(discordManager instanceof DiscordManager))
 			throw new Error(`Falta el elemento Discord en el plugin ${this.name}`);
 		if(!(commandManager instanceof CommandManager))
+			throw new Error(`Falta el elemento CommandManager en el plugin ${this.name}`);
+		if(!(slashManager instanceof SlashManager))
 			throw new Error(`Falta el elemento CommandManager en el plugin ${this.name}`);
 
 		Object.defineProperty(this, '_logger', { value: logger });
@@ -103,5 +106,14 @@ export default class Module {
 			throw new Error("Se esperaba un objeto como parámetro");
 		for (const [key, value] of Object.entries(commands))
 			this.registerCommand(key, value);
+	}
+
+	// Slash commands
+	async registerSlash(data) {
+		if(!data.hasOwnProperty("slash"))
+			throw new Error("Falta la propiedad slash");
+		if(!data.hasOwnProperty("action"))
+			throw new Error("Falta la propiedad action");
+		await this._slashManager.addCommand(this, data.slash, data.action);
 	}
 }

@@ -140,6 +140,6 @@ async function _execCmd(interaction, action, params) {
 	const response = await action(...params);
 	if(response !== undefined)
 		await interaction.reply(response);
-	// await wait(500); // Tiempo de espera para este usuario
+	// await wait(500); // Tiempo de espera para este usuario + la espera de ejecutar su solicitud
 	// Sacar al usuario de la lista negra
 }

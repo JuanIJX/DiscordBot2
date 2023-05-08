@@ -1,6 +1,5 @@
 import { Level } from "../../../libraries/logger.js";
 import { decimalAdjust, isFloat, isInteger } from "../../../libraries/utils.mjs";
-import funcPlaylist from "./cmdmusicplaylist.js"
 
 function embedHelp(cmdName) {
 	return {
@@ -62,7 +61,7 @@ export default async function(message, cmdName, args) {
 			break;
 		case "pl":
 		case "playlist":
-			await funcPlaylist.bind(this)(message, args.shift(), args, cmdName);
+			//await funcPlaylist.bind(this)(message, args.shift(), args, cmdName);
 			break;
 		case "seek":
 			if(!queue)

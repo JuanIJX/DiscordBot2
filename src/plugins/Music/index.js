@@ -1,6 +1,7 @@
 import Module from "../../app/module.js"
 import MusicController from "./music-controller.js";
-import funcMusic from "./commands/cmdmusic.js"
+import funcMusic from "./commands/cmd_music.js"
+import funcMusicPlaylist from "./commands/slash_musicplaylist.js"
 import { ChannelType, SlashCommandBuilder } from "discord.js";
 export default class Music extends Module {
 	async onLoad() {

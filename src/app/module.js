@@ -112,8 +112,8 @@ export default class Module {
 	async registerSlash(data) {
 		if(!data.hasOwnProperty("slash"))
 			throw new Error("Falta la propiedad slash");
-		if(!data.hasOwnProperty("action"))
-			throw new Error("Falta la propiedad action");
-		await this._slashManager.addCommand(this, data.slash, data.action);
+		if(!data.hasOwnProperty("execute"))
+			throw new Error("Falta la propiedad execute");
+		await this._slashManager.addCommand(this, data.slash, data.execute);
 	}
 }

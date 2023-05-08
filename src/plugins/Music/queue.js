@@ -24,26 +24,25 @@ export default class Queue {
 
 	async addAndPlay(searchResult, channel=null) {
 		// Connect if not connected
-		if (!this.inChannel()) {
-			try {
+		try {
+			if (!this.inChannel())
 				await this.queue.connect(channel);
-			} catch (error) {
-				if (!this.queue.deleted)
-					this.queue.delete();
-				throw error;
+
+			// Add song
+			this.queue.addTrack(searchResult.playlist ? searchResult.tracks : searchResult.tracks[0]);
+
+			// Play
+			if (!this.queue.isPlaying()) {
+				// @distube/ytdl-core
+				await this.queue.node.play();
+				return true;
 			}
+			return false;
+		} catch (error) {
+			if (!this.queue.deleted)
+				this.queue.delete();
+			throw error;
 		}
-
-		// Add song
-		this.queue.addTrack(searchResult.playlist ? searchResult.tracks : searchResult.tracks[0]);
-
-		// Play
-		if (!this.queue.isPlaying()) {
-			// @distube/ytdl-core
-			await this.queue.node.play();
-			return true;
-		}
-		return false;
 	}
 
 	clear() {

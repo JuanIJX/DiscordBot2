@@ -19,7 +19,7 @@ export default class MusicController {
 		PlaylistManager.pluginPath = this.module.thisPath;
 
 		this.player.events.on('playerStart', (queue, track) => this.module.log(Level.DEBUG, `(g: ${queue.id}) Canción iniciada '${track.title}'`));
-		this.player.events.on('playerFinish', (queue, track) => this.module.log(Level.DEBUG, `(g: ${queue.id}) Canción finalizada ' ${track.title}'`));
+		this.player.events.on('playerFinish', (queue, track) => this.module.log(Level.DEBUG, `(g: ${queue.id}) Canción finalizada '${track.title}'`));
 	}
 
 	/**

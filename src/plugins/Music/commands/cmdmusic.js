@@ -45,14 +45,19 @@ export default async function(message, cmdName, args) {
 		case "t":
 		case "test":
 			if(message.author.id != "171058039065935872") return;
-			cadURL = "https://open.spotify.com/playlist/4n1hWfaXaUOUihWwsgSLcP?si=3ccbecee9ea8493b";
-			cadURL = "https://open.spotify.com/playlist/37i9dQZEVXcGlPKsPtaZre?si=270cc6f764864e0a&nd=1";
-			cadURL = "https://www.youtube.com/watch?v=978Cb1lAY0s";
-			//cadURL = "https://www.youtube.com/watch?v=g7i1pkf-CbY&list=FLSXkyNPfZS2feOSwk-ZySiA&index=9&pp=gAQB&ab_channel=capoVEVO";
-			//channel = message.guild.channels.cache.get("1090594158294601810");
-			searchResult = await this.mc.search(cadURL, { requestedBy: message.author });
-			queue = this.mc.createQueue(message.guildId);
-			await queue.addAndPlay(searchResult, channel);
+			try {
+				cadURL = "https://open.spotify.com/playlist/4n1hWfaXaUOUihWwsgSLcP?si=3ccbecee9ea8493b";
+				//cadURL = "https://open.spotify.com/playlist/37i9dQZEVXcGlPKsPtaZre?si=270cc6f764864e0a&nd=1";
+				//cadURL = "https://www.youtube.com/watch?v=978Cb1lAY0s";
+				//cadURL = "https://www.youtube.com/watch?v=g7i1pkf-CbY&list=FLSXkyNPfZS2feOSwk-ZySiA&index=9&pp=gAQB&ab_channel=capoVEVO";
+				//channel = message.guild.channels.cache.get("1090594158294601810");
+				searchResult = await this.mc.search(cadURL, { requestedBy: message.author });
+				queue = this.mc.createQueue(message.guildId);
+				queue.addTrack(searchResult);
+				await queue.play(channel);
+			} catch (error) {
+				console.log(error);
+			}
 			console.log("hecho");
 			break;
 		case "pl":
@@ -226,7 +231,7 @@ export default async function(message, cmdName, args) {
 			if(!queue)
 				await message.reply(`No hay cola`);
 			else {
-				queue.skip();
+				await queue.skip(channel);
 				await message.reply(`Skipped`);
 				this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) skipeó la canción`);
 			}
@@ -245,14 +250,18 @@ export default async function(message, cmdName, args) {
 					else {
 						try {
 							queue = this.mc.createQueue(message.guildId);
-							if(await queue.addAndPlay(searchResult, channel))
-								await message.reply(`Reproduciendo`);
-							else
+							queue.addTrack(searchResult);
+							if(queue.isPlaying) {
 								await message.reply(`Añadido a la cola`);
+							}
+							else {
+								await queue.play(channel);
+								await message.reply(`Reproduciendo`);
+							}
 							this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) añadió ${searchResult.playlist ? `${searchResult.tracks.length} canciones` : `'${searchResult.tracks[0].title}'`}`);
 						} catch (error) {
 							await message.reply(`Error`);
-							this.log(Level.DEBUG, error);
+							this.log(Level.ERROR, error);
 						}
 					}
 				}
@@ -260,3 +269,26 @@ export default async function(message, cmdName, args) {
 			break;
 	}
 }
+
+/*
+
+- Hacer que funcione bien el skip
+ * que arranque cuando la canción esta pausada
+ * que arranque si hay canciones en cola aunque no este en play
+ * que conecte al canal del solicitante si no está en ninguno
+ * cada usuario solo skipeara su cancion en modo estricto, a excepción del dj y admins que skipearán todas
+- limitacion del uso de la cola
+ * los administradores tendrán pleno uso
+ * a posteriori tendrá uso de la cola en "dj"
+- quién es el dj?
+ * el dj es quien crea la cola (debe estár conectado en algun canal)
+ * la comprobación de quien es el dj no se hará por evento si no cuando se solicite por alguna acción
+ * si el dj se desconecta pasará a ser otro usuario segun los siguientes criterios en orden de prioridad:
+  · el que esté conectado en el mismo canal que el bot con la siguiente prioridad:
+   > el primero que haya introducido alguna canción en el bot, se comprobará el history en orden inverso
+     despues la lista de canciones en orden normal
+   > si nadie de la sala introdujo nada, el dj será el primero que obtenga el bot (posible comando para darse owner)
+     o el primero que le de una orden administrativa (skip, add, play, eq), no contarán ordenes informativas
+	 (list, history, etc...)
+  · si no hay nadie conectado donde está el bot, dj será quien lo llame desde otro canal
+*/

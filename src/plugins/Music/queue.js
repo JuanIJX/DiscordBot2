@@ -1,5 +1,5 @@
 import { isInteger } from "../../libraries/utils.mjs";
-import { Util } from "./DiscordPlayer.cjs"
+import { SearchResult, Util } from "./DiscordPlayer.cjs"
 export default class Queue {
 	constructor(queue, mc) {
 		this.queue = queue;
@@ -18,26 +18,38 @@ export default class Queue {
     get durationFormatted() { return this.queue.durationFormatted; }
     get voiceReceiver() { return this.queue.voiceReceiver; }
     get metadata() { return this.queue.metadata; }
+	get isPlaying() { return this.queue.isPlaying(); }
 
 
 	/* Controles */
 
-	async addAndPlay(searchResult, channel=null) {
-		// Connect if not connected
+	addTrack(song) {
+		if(song instanceof SearchResult)
+			this.queue.addTrack(song.playlist ? song.tracks : song.tracks[0]);
+		else if(song instanceof Track || (Array.isArray(song) && song[0] instanceof Track))
+			this.queue.addTrack(song);
+	}
+
+	async join(channel) {
+		if (this.inChannel()) {
+			// Moverlo a donde se diga
+		}
+		else
+			await this.queue.connect(channel);
+	}
+
+	async play(channel=null) {
+		if(this.tracks.size == 0)
+			return;
+
 		try {
+			// Connect if not connected
 			if (!this.inChannel())
 				await this.queue.connect(channel);
 
-			// Add song
-			this.queue.addTrack(searchResult.playlist ? searchResult.tracks : searchResult.tracks[0]);
-
 			// Play
-			if (!this.queue.isPlaying()) {
-				// @distube/ytdl-core
+			if (!this.isPlaying)
 				await this.queue.node.play();
-				return true;
-			}
-			return false;
 		} catch (error) {
 			if (!this.queue.deleted)
 				this.queue.delete();
@@ -50,24 +62,32 @@ export default class Queue {
         this.queue.dispatcher?.end();
 	}
 
-	skip() {
+	async skip(channel=null) {
 		/*if (queue.repeatMode === 1) {
 			queue.setRepeatMode(0);
 			queue.node.skip();
 			await wait(500);
 			queue.setRepeatMode(1);
 		}*/
-		return this.queue.isPlaying() && this.queue.node.skip();
+
+		//console.log(this.isPlaying);
+		
+		if(this.isPlaying) {
+			this.node.setPaused(false);
+			this.queue.node.skip();
+		}
+		else
+			await this.play(channel);
 	}
 
 	async replay(trackPosition) {
 		const track = this.history.tracks.at(trackPosition);
 		if(track) {
 			this.node.insert(track, 0);
-			if(this.queue.isPlaying())
+			if(this.isPlaying)
 				this.skip();
 			else
-				await this.queue.node.play();
+				await this.queue.node.play(); // Probar cuando no este conectado en un canal
 			return track;
 		}
 		return null;
@@ -128,7 +148,7 @@ export default class Queue {
 		return {
 			title: 'Lista canciones',
 			description: [
-				`**Canción actual**`,
+				`**Canción actual**${this.node.isPaused() ? ` [Pausa]` : ""}`,
 				this.queue.currentTrack!=null ?
 					`[${current.title}](${current.url}) ${current.timestamp.current.label}/${current.duration}` :
 					`No hay canción`,
@@ -137,7 +157,7 @@ export default class Queue {
 				tracks.length > 0 ?
 					tracks
 						.slice(sl1, sl2)
-						.map((track, i) => `**${i+1}.** [${track.title.suspensivos(64)}](${track.url}) ${track.duration}`)
+						.map((track, i) => `**${sl1+i+1}.** [${track.title.suspensivos(64)}](${track.url}) ${track.duration}`)
 						.join("\n") :
 					"No hay canciones"
 			].join("\n").suspensivos(4096, "#!#"),
@@ -167,7 +187,7 @@ export default class Queue {
 				tracks.length > 0 ?
 					tracks
 						.slice(sl1, sl2)
-						.map((track, i) => `${i+1}. [${track.title.suspensivos(64)}](${track.url}) ${track.duration}`)
+						.map((track, i) => `${sl1+i+1}. [${track.title.suspensivos(64)}](${track.url}) ${track.duration}`)
 						.join("\n")  :
 					"No hay canciones"
 			].join("\n").suspensivos(4096, "#!#"),
@@ -215,10 +235,6 @@ export default class Queue {
 			});
 		}
 		return embed;
-	}
-
-	tracksLength() {
-		return this.queue.tracks.size;
 	}
 
 	getQueueInfo() {

@@ -270,7 +270,7 @@ export default async function(message, cmdName, args) {
 }
 
 /*
-
+- Limitar la cantidad de canciones que añadir al bot
 - Hacer que funcione bien el skip
  * que arranque cuando la canción esta pausada
  * que arranque si hay canciones en cola aunque no este en play

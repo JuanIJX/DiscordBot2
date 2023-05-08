@@ -61,8 +61,8 @@ export default class Main {
 		//  ** FAST SETTINGS **
 		Object.assign(this._config, this._readCommandLineArgs());
 
-		this.discordManager.discord.on(Events.MessageCreate, e => this._commandManager.commandHandler(e));
-		this.discordManager.discord.on(Events.InteractionCreate, e => this._slashManager.commandHandler(e));
+		this.discordManager.discord.on(Events.MessageCreate, e => this._commandManager.handler(e));
+		this.discordManager.discord.on(Events.InteractionCreate, e => this._slashManager.handler(e));
 
 		if(this._config.debug)
 			this._logger

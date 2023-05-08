@@ -37,7 +37,7 @@ export default class CommandManager {
 		this._availableCmds.set(name, { module, channels, action });
 	}
 
-	commandHandler(message) {
+	handler(message) {
 		if(message.content == "") return;
 		if(message.channel.type == ChannelType.DM || message.channel.type == ChannelType.GroupDM) return;
 		if(message.author.id == message.client.user.id) return;

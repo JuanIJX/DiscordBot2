@@ -29,13 +29,13 @@ Object.defineProperties(Array.prototype, {
 				this.splice(i--, 1);
 		}
 		return this;
-	} },
+	}, configurable: true, writable: true },
 	"deleteElement": { value: function(element) {
 		var pos = this.indexOf(element);
 		if(pos !== -1)
 			this.splice(pos, 1);
 		return this;
-	} },
+	}, configurable: true, writable: true },
 	"unique": { value: function() {
 		var a = this.concat();
 		for(var i=0; i<a.length; ++i) {
@@ -45,7 +45,7 @@ Object.defineProperties(Array.prototype, {
 			}
 		}
 		return a;
-	} },
+	}, configurable: true, writable: true },
 	"concat2": { value: function(...arrays) {
 		for (let index = 0; index < arrays.length; index++) {
 			for (let i = 0; i < arrays[index].length; i++) {
@@ -53,7 +53,7 @@ Object.defineProperties(Array.prototype, {
 					this.push(arrays[index][i]);
 			}
 		}
-	} },
+	}, configurable: true, writable: true },
 });
 
 // Object
@@ -61,7 +61,7 @@ Object.prototype.clone = function() { return JSON.parse(JSON.stringify(this)); }
 Object.defineProperties(Object.prototype, {
 	"getKeyByValue": { value: function(value) {
 		return Object.keys(this).find(key => this[key] === value);
-	} },
+	}, configurable: true, writable: true },
 	"assign": { value: function(obj) {
 		for (const key in obj) {
 			if (!Object.hasOwnProperty.call(obj, key)) continue;
@@ -76,7 +76,7 @@ Object.defineProperties(Object.prototype, {
 				this[key] = obj[key]; // Copiar bien copiao, pero temporalmente lo hacemos asi y ale, deberiamos usar clone
 		}
 		return this;
-	} },
+	}, configurable: true, writable: true },
 })
 
 // String
@@ -86,7 +86,7 @@ Object.defineProperties(String.prototype, {
 		if(type)
 			return arry.shift() + arry.reduce((a, b) => a + b.charAt(0).toUpperCase() + b.slice(1), "");
 		return arry.reduce((a, b) => a + b.charAt(0).toUpperCase() + b.slice(1), "");
-	} },
+	}, configurable: true, writable: true },
 	"rellenar": { value: function(size, character=' ') {
 		var t = true;
 		var r = this;
@@ -95,26 +95,26 @@ Object.defineProperties(String.prototype, {
 			t = !t;
 		}
 		return r;
-	} },
+	}, configurable: true, writable: true },
 	"delExt": { value: function() {
 		const pos = this.lastIndexOf(".");
 		if(pos!=-1)
 			return this.substring(0, pos);
 		return this;
-	} },
+	}, configurable: true, writable: true },
 	"getExt": { value: function() {
 		const pos = this.lastIndexOf(".");
 		if(pos!=-1)
 			return this.substring(pos+1);
 		return this;
-	} },
-	"zeroPad": { value: function(n = 2) { return (getZero(n)+this).slice(-1 * (n < this.length ? this.length : n)); } },
-	"suspensivos": { value: function(max, chars="...") { return this.length > max ? this.substring(0, max+chars.length)+chars : this; } },
+	}, configurable: true, writable: true },
+	"zeroPad": { value: function(n = 2) { return (getZero(n)+this).slice(-1 * (n < this.length ? this.length : n)); }, configurable: true, writable: true },
+	"suspensivos": { value: function(max, chars="...") { return this.length > max ? this.substring(0, max+chars.length)+chars : this; }, configurable: true, writable: true },
 });
 
 // Number
 Object.defineProperties(Number.prototype, {
-	"zeroPad": { value: function(n = 2) { return (this+"").zeroPad(n) } }
+	"zeroPad": { value: function(n = 2) { return (this+"").zeroPad(n) }, configurable: true, writable: true }
 });
 
 // Date
@@ -208,7 +208,7 @@ Object.defineProperties(Date.prototype, {
 			}
 		}
 		return cad;
-	} }
+	}, configurable: true, writable: true }
 });
 
 

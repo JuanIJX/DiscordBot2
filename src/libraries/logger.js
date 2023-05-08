@@ -34,6 +34,14 @@ function stringifyNoCircular(obj, space=null) {
 	}, space);
 }
 
+function processMsg(msg, debug) {
+	if(msg instanceof Error)
+		return debug ? msg.stack : msg.message;
+	if(typeof(msg) == "object")
+		return stringifyNoCircular(msg, 2);
+	return msg;
+}
+
 export default class Logger {
 	static _extension = "txt";
 	static _hourFormat = "H:i:s";
@@ -60,18 +68,25 @@ export default class Logger {
 		});
 
 		Object.defineProperty(this, "_log", { value: function(loglevel, invoker, msg, date, loglevelName) {
-			var msg = `${date.format(this.constructor._hourFormat)}` + (invoker=="" ? "" : ` [${invoker}] (${loglevelName})`) + ` ${typeof(msg)=="object" ? stringifyNoCircular(msg, 2) : msg}`;
+			var _msg = [
+				date.format(this.constructor._hourFormat),
+				invoker=="" ? null : `[${invoker}]`,
+				`(${loglevelName})`,
+				msg,
+			].filter(e => e!==null);
+
 			if(this.levelConsole & loglevel)
-				this._writeConsole(msg);
+				this._writeConsole(_msg);
 			if(this.levelFile & loglevel)
-				this._writeFile(msg);
+				this._writeFile(_msg);
 		} });
 		Object.defineProperty(this, "_writeConsole", { value: function(msg) {
-			console.log(msg);
+			msg.push(processMsg(msg.pop(), this.levelConsole & Level.DEBUG));
+			console.log(msg.join(" "));
 		} });
 		Object.defineProperty(this, "_writeFile", { value: function(msg) {
-			var file = this._getFile();
-			fs.writeSync(this._file, `${msg}${EOL}`);
+			msg.push(processMsg(msg.pop(), this.levelFile & Level.DEBUG));
+			fs.writeSync(this._getFile(), msg.join(" ") + EOL);
 		} });
 		Object.defineProperty(this, "_getFile", { value: function() {
 			var today = this.constructor._getDate().format("Y-m-d");

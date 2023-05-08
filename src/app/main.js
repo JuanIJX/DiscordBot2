@@ -38,7 +38,7 @@ export default class Main {
 				await this.instance.asyncInit();
 			}
 			catch (error) {
-				this.instance.log(Level.FATAL, this.instance._config.debug ? error.stack : error.message);
+				this.instance.log(Level.FATAL, error);
 				this.instance.stop();
 			}
 		}
@@ -154,7 +154,7 @@ export default class Main {
 				this.modules.set(classModuleName, instanciedModule);
 				this._logger.log(Level.DEBUG, this.name, `Plugin '${classModuleName}' cargado`);
 			} catch (error) {
-				this._logger.log(Level.ERROR, classModuleName ?? this.name, this._config.debug ? error.stack : error.message);
+				this._logger.log(Level.ERROR, classModuleName ?? this.name, error);
 			}
 		}
 

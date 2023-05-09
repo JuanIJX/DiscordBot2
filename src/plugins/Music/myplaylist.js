@@ -88,11 +88,10 @@ export class MyPlaylist {
 		};
 	}
 
-	embed(pag) {
-		const pag_size = 10;
+	embed(pag, pag_size) {
 		const embed = {
 			title: `Mis playlist`,
-			fields: this._lists.map((list, i) => {
+			fields: this.tracks.map((list, i) => {
 				return {
 					name: `[${(i+1).zeroPad()}] - ${list.name}`,
 					value: [

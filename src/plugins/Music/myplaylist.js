@@ -194,8 +194,9 @@ export class UserPlaylist {
 export default class PlaylistManager {
 	static player = null;
 	static pluginPath = "";
-	static _srcFile = "playlists";
-	static getFilePath = id => path.join(this.pluginPath, this._srcFile, `user_${id}.json`);
+	static _srcFile = "data/playlists";
+	static _fileName = `user_${id}.json`;
+	static getFilePath = id => path.join(this.pluginPath, this._srcFile, this._fileName);
 	static exists = user => fs.existsSync(this.getFilePath(user.id));
 
 	/**

@@ -1,6 +1,8 @@
 /node_modules
 /logs
 /src/config
+/src/plugins/**/config
+/src/plugins/**/data
 /src/test
 /test
 /libs

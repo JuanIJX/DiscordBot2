@@ -30,30 +30,50 @@ function embedHelp(cmdName) {
 export default async function(message, cmdName, args) {
 	let
 		channel = message.member.voice.channel,
-		queue = this.mc.getQueue(message.guildId),
+		queue = this.musicController.getQueue(message.guildId),
 		searchResult,
 		cadURL,
 		aux1, aux2;
 
 	switch (args[0]) {
+		case "t4":
+			if(message.author.id != "171058039065935872") return;
+			
+			await queue.play();
+			break;
+		case "t3":
+			if(message.author.id != "171058039065935872") return;
+
+			await queue.join(channel);
+			break;
 		case "t2":
 			if(message.author.id != "171058039065935872") return;
-			//console.log(queue?.queue.currentTrack);
-			console.log(this.mc.player.scanDeps());
+			
+			queue = this.musicController.createQueue(message.guildId);
 			break;
 		case "t":
 		case "test":
 			if(message.author.id != "171058039065935872") return;
 			try {
 				cadURL = "https://open.spotify.com/playlist/4n1hWfaXaUOUihWwsgSLcP?si=3ccbecee9ea8493b";
-				//cadURL = "https://open.spotify.com/playlist/37i9dQZEVXcGlPKsPtaZre?si=270cc6f764864e0a&nd=1";
-				//cadURL = "https://www.youtube.com/watch?v=978Cb1lAY0s";
-				//cadURL = "https://www.youtube.com/watch?v=g7i1pkf-CbY&list=FLSXkyNPfZS2feOSwk-ZySiA&index=9&pp=gAQB&ab_channel=capoVEVO";
+				cadURL = "https://open.spotify.com/playlist/37i9dQZEVXcGlPKsPtaZre?si=270cc6f764864e0a&nd=1";
+				cadURL = "https://www.youtube.com/watch?v=978Cb1lAY0s";
+				cadURL = "https://www.youtube.com/watch?v=g7i1pkf-CbY&list=FLSXkyNPfZS2feOSwk-ZySiA&index=9&pp=gAQB&ab_channel=capoVEVO";
+				cadURL = "https://open.spotify.com/playlist/37i9dQZF1E8GG77A1xDgV4";
+
+				// Canciones bug
+				// cadURL = "https://open.spotify.com/track/6MTd61g9zq6CB1FnJydjEb"; // esta si se reproduce aunq sea la misma q la de abajo
+				cadURL = "https://open.spotify.com/track/6yjEYK1gwGlTlD04cRm1t9";
+				cadURL = "https://www.youtube.com/watch?v=rqa1zbSqR6M";
+
+				//cadURL = "https://www.youtube.com/watch?v=p_5yt5IX38I";
+
 				//channel = message.guild.channels.cache.get("1090594158294601810");
-				searchResult = await this.mc.search(cadURL, { requestedBy: message.author });
-				queue = this.mc.createQueue(message.guildId);
+				searchResult = await this.musicController.search(cadURL, { requestedBy: message.author });
+				//queue = this.musicController.createQueue(message.guildId);
 				queue.addTrack(searchResult);
-				await queue.play(channel);
+				//await queue.join(channel);
+				//await queue.play();
 			} catch (error) {
 				console.log(error);
 			}
@@ -101,20 +121,20 @@ export default async function(message, cmdName, args) {
 		case "eq":
 		case "equalizer":
 			if(args.length <= 1)
-				await message.channel.send(this.getEmbed(this.mc.embedEqualizer()));
+				await message.channel.send(this.getEmbed(this.musicController.embedEqualizer()));
 			else if(!queue)
 				await message.reply(`No hay cola`);
 			else {
 				aux1 = (args.length > 1 && isInteger(args[1])) ? parseInt(args[1]) : 1;
-				if(aux1 < 1 || aux1 > Object.keys(this.mc.getEqualizerList()).length)
+				if(aux1 < 1 || aux1 > Object.keys(this.musicController.getEqualizerList()).length)
 					await message.reply(`Posición de la lista erróneo`);
 				else {
 					if(!queue.queue.filters.equalizer)
 						await message.reply(`El equalizador no está disponible`);
 					else {
 						//.setEQ([{ band: 0, gain: 0.78 }]);
-						queue.queue.filters.equalizer.setEQ(this.mc.getEqualizerList(aux1-1))
-						aux2 = Object.keys(this.mc.getEqualizerList())[aux1-1];
+						queue.queue.filters.equalizer.setEQ(this.musicController.getEqualizerList(aux1-1))
+						aux2 = Object.keys(this.musicController.getEqualizerList())[aux1-1];
 						await message.reply(`Equalizer: ${aux2}`);
 						this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) estableció el equalizador a ${aux2}`);
 					}
@@ -240,15 +260,21 @@ export default async function(message, cmdName, args) {
 				await message.reply(`Debes estar en un canal de voz`);
 			else {
 				cadURL = message.content.substr(cmdName.length).trim();
-				if(!cadURL)
-					await message.reply(`No se proporcionó una canción`);
+				if(!cadURL) {
+					if(queue.tracks.size == 0)
+						await message.reply(`No se proporcionó una canción`);
+					else {
+						await queue.play(channel);
+						await message.reply(`Reproduciendo`);
+					}
+				}
 				else {
-					searchResult = await this.mc.search(cadURL, { requestedBy: message.author });
+					searchResult = await this.musicController.search(cadURL, { requestedBy: message.author });
 					if (!searchResult || !searchResult.hasTracks())
 						await message.reply(`No se encuentra la canción`);
 					else {
 						try {
-							queue = this.mc.createQueue(message.guildId);
+							queue = this.musicController.createQueue(message.guildId);
 							queue.addTrack(searchResult);
 							if(queue.isPlaying) {
 								await message.reply(`Añadido a la cola`);

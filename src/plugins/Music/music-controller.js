@@ -3,13 +3,13 @@ import { Player, EqualizerConfigurationPreset } from "./DiscordPlayer.cjs"
 import PlaylistManager from "./myplaylist.js";
 import Queue from "./queue.js";
 export default class MusicController {
-	constructor(module, config) {
-		this.player = new Player(module.discordManager.discord, {
+	constructor(module) {
+		Object.defineProperty(this, "module", { value: module, enumerable: true });
+		Object.defineProperty(this, "player", { value: new Player(this.module.discordManager.discord, {
 			autoRegisterExtractor: false,
 			ytdlOptions: { quality: "highestaudio", highWaterMark: 1 << 25 }
-		});
-		this.module = module;
-		this.queueConfig = config;
+		}), enumerable: true });
+		Object.defineProperty(this, "_config", { value: this.module.configManager.get("queue").content });
 	}
 
 	async load() {
@@ -20,6 +20,10 @@ export default class MusicController {
 
 		this.player.events.on('playerStart', (queue, track) => this.module.log(Level.DEBUG, `(g: ${queue.id}) Canción iniciada '${track.title}'`));
 		this.player.events.on('playerFinish', (queue, track) => this.module.log(Level.DEBUG, `(g: ${queue.id}) Canción finalizada '${track.title}'`));
+		if(this._config?.debug?.player === true)
+			this.player.on('debug', msg => console.log(msg));
+		if(this._config?.debug?.queue === true)
+			this.player.events.on('debug', (queue, msg) => console.log(msg));
 	}
 
 	/**
@@ -51,7 +55,8 @@ export default class MusicController {
 			leaveOnEmpty: false,
 			leaveOnEnd: false,
 			leaveOnStop: false,
-			selfDeaf: false
+			selfDeaf: false,
+			volume: this._config?.volume ?? 100,
 		}), this);
 	}
 

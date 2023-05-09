@@ -1,9 +1,9 @@
 import { isInteger } from "../../libraries/utils.mjs";
 import { SearchResult, Util } from "./DiscordPlayer.cjs"
 export default class Queue {
-	constructor(queue, mc) {
-		this.queue = queue;
-		this.mc = mc;
+	constructor(queue, musicController) {
+		Object.defineProperty(this, "_musicController", { value: musicController });
+		Object.defineProperty(this, "queue", { value: queue, enumerable: true });
 	}
 
 	get currentTrack() { return this.queue.currentTrack; }

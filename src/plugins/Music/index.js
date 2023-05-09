@@ -6,17 +6,15 @@ export default class Music extends Module {
 	async onLoad() {
 		this.color = 0xbb00ff;
 		this.configManager.add("queue", "config/queue.yml", {
-			selfDeaf: false,
-			leaveOnEmpty: false,
-			leaveOnEnd: false,
-			leaveOnEmptyCooldown: 30000,
-			leaveOnEndCooldown: 30000,
-			leaveOnStop: false,
-        	leaveOnStopCooldown: 30000,
+			leaveOnEnd: 600,
 			volume: 100,
+			debug: {
+				player: false,
+				queue: false
+			}
 		});
-		this.mc = new MusicController(this, this.configManager.get("queue"));
-		await this.mc.load();
+		this.musicController = new MusicController(this);
+		await this.musicController.load();
 
 		this.registerCommand("!Pu", funcMusic);
 		this.registerCommand("!pu", funcMusic);
@@ -25,6 +23,6 @@ export default class Music extends Module {
 	}
 	async onEnable() {}
 	async onDisable() {
-		await this.mc.destroy();
+		await this.musicController.destroy();
 	}
 }

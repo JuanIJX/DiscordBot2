@@ -21,7 +21,7 @@ export class MyPlaylist {
 		Object.defineProperty(this, "_parent", { value: parent });
 		Object.defineProperty(this, "_name", { value: name, writable: true });
 		Object.defineProperty(this, "_description", { value: options?.description ?? "", writable: true });
-		Object.defineProperty(this, "_date", { value: options?.date ?? getDate().format("Y-m-d H:i:s") });
+		Object.defineProperty(this, "_date", { value: options?.date ?? getDate() });
 		Object.defineProperty(this, "_tracks", { value: [] });
 	}
 
@@ -96,7 +96,7 @@ export class MyPlaylist {
 				return {
 					name: `[${(i+1).zeroPad()}] - ${list.name}`,
 					value: [
-						`Creado el: ${list.date}`,
+						`Creado el: ${list.date.format("Y-m-d H:i")}`,
 						list.description!="" ? `Description: ${list.description}` : null,
 						`Tracks: ${list.size}`,
 						`Duración: ${list.totalDuration}`,
@@ -116,7 +116,7 @@ export class UserPlaylist {
 	constructor(user) {
 		Object.defineProperty(this, "_id", { value: user.id });
 		Object.defineProperty(this, "_tag", { value: user.tag });
-		Object.defineProperty(this, "_created", { value: getDate().format("Y-m-d H:i:s"), writable: true });
+		Object.defineProperty(this, "_created", { value: getDate(), writable: true });
 		Object.defineProperty(this, "_lists", { value: [] });
 		Object.defineProperty(this, "_file", { value: PlaylistManager.getFilePath(this._id) });
 		Object.defineProperty(this, "_config", { value: new Config(this._file, this.toJSON()) });
@@ -125,7 +125,7 @@ export class UserPlaylist {
 		for (const myPlaylistJson of this._config.content.lists) {
 			const myPlaylist = new MyPlaylist(this, myPlaylistJson.name, {
 				description: myPlaylistJson.description,
-				date: myPlaylistJson.date
+				date: new Date(myPlaylistJson.date),
 			});
 			myPlaylist.addTracksJson(myPlaylistJson.tracks);
 			this._lists.push(myPlaylist);
@@ -180,7 +180,7 @@ export class UserPlaylist {
 				return {
 					name: `[${(i+1).zeroPad()}] - ${list.name}`,
 					value: [
-						`Creado el: ${list.date}`,
+						`Creado el: ${list.date.format("Y-m-d H:i")}`,
 						list.description!="" ? `Description: ${list.description}` : null,
 						`Tracks: ${list.size}`,
 						`Duración: ${list.totalDuration}`,

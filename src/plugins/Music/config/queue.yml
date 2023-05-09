@@ -1,8 +1,5 @@
-selfDeaf: false
-leaveOnEmpty: false
-leaveOnEnd: false
-leaveOnEmptyCooldown: 0
-leaveOnEndCooldown: 0
-leaveOnStop: false
-leaveOnStopCooldown: 0
+leaveOnEnd: 600
 volume: 100
+debug:
+  player: false
+  queue: false

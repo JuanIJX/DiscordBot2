@@ -72,7 +72,7 @@ export default {
 			case "list":
 				if(!userPlayList || userPlayList.size == 0)
 					return "No hay listas de reproducción";
-				return this.getEmbed(userPlayList.embed());
+				return this.getEmbed(userPlayList.embed(), true);
 			case "create":
 				userPlayList ??= PlaylistManager.create(user);
 				userPlayList
@@ -81,14 +81,25 @@ export default {
 				userPlayList.save();
 				return `Creada la lista con el nombre: '${ops.getString("name")}'`;
 			case "delete":
-				console.log(ops.getInteger("index"));
-				break;
+				if(!userPlayList || userPlayList.size == 0)
+					return "No hay listas de reproducción";
+				if(ops.getInteger("index") > userPlayList.size)
+					return `Index máximo: ${userPlayList.size}`
+
+				myPlaylist = userPlayList.remove(ops.getInteger("index")-1);
+				userPlayList.save();
+				return `Lista eliminada: ${myPlaylist?.name}`;
 			case "pl":
+				if(!userPlayList || userPlayList.size == 0)
+					return "No hay listas de reproducción";
+
 				switch (ops.getSubcommand(false)) {
 					case "list":
-						console.log(ops.getInteger("index"));
-						console.log(ops.getInteger("pag"));
-						break;
+						if(ops.getInteger("index") > userPlayList.size)
+							return `Index máximo: ${userPlayList.size}`
+						myPlaylist = userPlayList.at(ops.getInteger("index")-1);
+
+						return myPlaylist.embed(ops.getInteger("pag")-1);
 				}
 				break;
 		}

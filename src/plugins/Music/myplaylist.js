@@ -159,9 +159,12 @@ export class UserPlaylist {
 	}
 
 	remove(index) {
-		if(index >= 0 && index < this.size)
+		if(index >= 0 && index < this.size) {
+			const myPlaylist = this._lists[index];
 			this._lists.splice(index, 1);
-		return this;
+			return myPlaylist;
+		}
+		return null;
 	}
 
 	toJSON() {

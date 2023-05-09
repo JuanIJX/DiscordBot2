@@ -85,8 +85,11 @@ export default class Module {
 		}
 	}
 
-	getEmbed(...objs) {
-		return { embeds: objs.map(obj => obj.assign(this._defaultEmbed)) };
+	getEmbed(objs, ephemeral=false) {
+		const embed = { embeds: (Array.isArray(objs) ? objs : [objs]).map(obj => obj.assign(this._defaultEmbed)) };
+		if(ephemeral)
+			embed.ephemeral = true;
+		return embed;
 	}
 
 	async onLoad() {}

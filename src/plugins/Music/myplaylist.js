@@ -6,6 +6,18 @@ import { Player, SearchResult, Track, Util } from "./DiscordPlayer.cjs"
 import { User } from "discord.js";
 
 export class MyPlaylist {
+
+	/**
+	 * Campos que contiene el json:
+     * - title
+     * - description
+     * - author
+     * - url
+     * - thumbnail
+     * - duration
+     * - durationMS
+	 * 
+	 */
 	static _toJSON(track) {
 		if(!(track instanceof Track))
 			return {};
@@ -25,6 +37,7 @@ export class MyPlaylist {
 		Object.defineProperty(this, "_tracks", { value: [] });
 	}
 
+	get index() { return this._parent.lists.indexOf(this); }
 	get size() { return this._tracks.length; }
 	get name() { return this._name; }
 	get description() { return this._description; }
@@ -32,53 +45,53 @@ export class MyPlaylist {
 	get tracks() { return this._tracks; }
 	get totalDuration() { return Util.buildTimeCode(Util.parseMS(this.tracks.reduce((a, c) => a + c.durationMS, 0))); }
 
-	setName(name) {
-		this._name = name;
-	}
+	async search(song, options={}) { return await this._parent.manager.player.search(song, options); }
+	save() { this._parent.save(); }
+	setName(name) { this._name = name; }
+	setDescription(description) { this._description = description; }
+	at(index) { return index >= 0 && index < this.size ? this.tracks[index] : null; }
+	clear() { this._tracks.splice(0, this.size); }
+	delete() { this._parent.remove(this.index); }
 
-	setDescription(description) {
-		this._description = description;
-	}
+	remove(index, size=1) {
+		if(index < 0 || index >= this.size)
+			return [];
 
-	delete() {
-		this._parent.remove(this._parent.lists.indexOf(this));
-	}
-
-	at(index) {
-		return index >= 0 && index < this.size ? this.tracks[index] : null;
-	}
-
-	remove(index) {
-		if(index >= 0 && index < this.size)
-			this.tracks.splice(index, 1);
-		return this;
+		const deletedTracks = this._tracks.slice(index, index + size);
+		this._tracks.splice(index, size);
+		return deletedTracks;
 	}
 
 	add(searchResult) {
 		if(!(searchResult instanceof SearchResult))
 			throw new Error("Se debe introducir un SearchResult");
 
-		for (const track of searchResult.tracks)
-			if(!this.tracks.find(tr => tr.url == track.url))
-				this.tracks.push(this.constructor._toJSON(track));
-		return this;
-	}
-
-	async addSearch(cad) {
-		this.add(await PlaylistManager.player.search(cad));
-	}
-
-	async getTracks() {
-		const tracks = [];
-		for (const tr of this.tracks)
-			tracks.push(await PlaylistManager.player.search(tr.url));
+		const tracks = searchResult.tracks
+			.filter(track => !this.tracks.find(tr => tr.url == track.url))
+			.map(track => this.constructor._toJSON(track));
+		this.tracks.push(...tracks);
 		return tracks;
 	}
 
-	addTracksJson(tracksJson) {
-		this.tracks.push(...tracksJson);
+	async addSearch(song) {
+		const searchResult = await this.search(song);
+		if(!searchResult.hasTracks())
+			return [];
+		return this.add(searchResult);
 	}
 
+	async getTracks(pos1, pos2, user) {
+		const tracks = [];
+		for (let index = pos1; index <= pos2; index++)
+			tracks.push((await this.search(this.tracks[index].url, { requestedBy: user })).tracks[0]);
+		return tracks;
+	}
+
+	async getTrack(index, user) {
+		return (await this.getTracks(index, index, user))[0];
+	}
+
+	addTracksJson(tracksJson) { this.tracks.push(...tracksJson); }
 	toJSON() {
 		return {
 			name: this.name,
@@ -88,36 +101,58 @@ export class MyPlaylist {
 		};
 	}
 
-	embed(pag, pag_size) {
-		const embed = {
-			title: `Mis playlist`,
-			fields: this.tracks.map((list, i) => {
-				return {
-					name: `[${(i+1).zeroPad()}] - ${list.name}`,
+	embed(pag, pagSize) {
+		const pagMax = Math.ceil(this.size / pagSize) - 1;
+		pag = pag < 0 ? this.size : pag;
+		const sl1 = pag * pagSize;
+		const sl2 = sl1 + pagSize;
+
+		let pagView = pag + 1;
+		if(this.size == 0)
+			pagView = 0;
+		else if(pag < 0 || pag > pagMax)
+			pagView = "?";
+
+		return {
+			title: `[${(this.index+1)}] ${this.name}`,
+			description: [
+				this.description!="" ? `**Descripción**\n${this.description}` : null,
+				``,
+				`**Tracks [${pagView}/${pagMax+1}]**`,
+				this.size > 0 ?
+					this.tracks
+						.slice(sl1, sl2)
+						.map((track, i) => `**${sl1+i+1}.** [${track.title.suspensivos(64)}](${track.url}) ${track.duration}`)
+						.join("\n") :
+					"No hay canciones"
+			]
+				.filter(e => e!=null)
+				.join("\n")
+				.suspensivos(4096, "#!#"),
+
+			fields: [
+				{
+					name: "Estadísticas",
 					value: [
-						`Creado el: ${list.date.format("Y-m-d H:i")}`,
-						list.description!="" ? `Description: ${list.description}` : null,
-						`Tracks: ${list.size}`,
-						`Duración: ${list.totalDuration}`,
-					].filter(e => e!=null).join("\n")
-				};
-			})
+						`Cantidad canciones: ${this.size}`,
+						`Tiempo total: ${Util.buildTimeCode(Util.parseMS(this.tracks.reduce((a, c) => a + c.durationMS, 0)))}`,
+					].join("\n")
+				},
+			]
 		};
-		if(this.description)
-			embed.description = this.description;
-		return embed;
 	}
 }
 
 export class UserPlaylist {
 	static _maxlists = 10;
 
-	constructor(user) {
+	constructor(user, manager) {
+		Object.defineProperty(this, "manager", { value: manager });
 		Object.defineProperty(this, "_id", { value: user.id });
 		Object.defineProperty(this, "_tag", { value: user.tag });
 		Object.defineProperty(this, "_created", { value: getDate(), writable: true });
 		Object.defineProperty(this, "_lists", { value: [] });
-		Object.defineProperty(this, "_file", { value: PlaylistManager.getFilePath(this._id) });
+		Object.defineProperty(this, "_file", { value: manager.getFilePath(this._id) });
 		Object.defineProperty(this, "_config", { value: new Config(this._file, this.toJSON()) });
 
 		this._created = this._config.content.created;
@@ -136,7 +171,6 @@ export class UserPlaylist {
 	get created() { return this._created; }
 	get lists() { return this._lists.slice(); }
 	get size() { return this._lists.length; }
-	get exists() { return false; }
 
 	save() {
 		this._config.save(this.toJSON());
@@ -180,7 +214,7 @@ export class UserPlaylist {
 			title: `Mis playlist`,
 			fields: this._lists.map((list, i) => {
 				return {
-					name: `[${(i+1).zeroPad()}] - ${list.name}`,
+					name: `[${(i+1)}] - ${list.name}`,
 					value: [
 						`Creado el: ${list.date.format("Y-m-d H:i")}`,
 						list.description!="" ? `Description: ${list.description}` : null,
@@ -194,24 +228,48 @@ export class UserPlaylist {
 }
 
 export default class PlaylistManager {
-	static player = null;
-	static pluginPath = "";
 	static _srcFile = "data/playlists";
-	static getFilePath = id => path.join(this.pluginPath, this._srcFile, `user_${id}.json`);
-	static exists = user => fs.existsSync(this.getFilePath(user.id));
+
+	constructor(player, pluginPath) {
+		if(!(player instanceof Player))
+			throw new Error("Falta el objeto de tipo Player");
+
+		Object.defineProperty(this, "player", { value: player, enumerable: true });
+		Object.defineProperty(this, "_pluginPath", { value: pluginPath });
+	}
 
 	/**
-	 * Devuelve un objeto de tipo UserPlaylist
+	 * Obtiene la ruta donde debería encontrarse almacenado
+	 * el fichero con los datos de un usuario
+	 * 
+	 * @param {string} id ID de discord del usuario
+	 * @returns Devuelve la ruta
+	 */
+	getFilePath(id) {
+		return path.join(this._pluginPath, this.constructor._srcFile, `user_${id}.json`);
+	}
+
+	/**
+	 * Comprueba si existe el fichero de datos de un usuario
+	 * 
+	 * @param {string} id ID de discord del usuario
+	 * @returns true si existe el fichero
+	 */
+	exists(id) {
+		return fs.existsSync(this.getFilePath(id));
+	}
+
+	/**
+	 * Devuelve un objeto de tipo UserPlaylist asociado
+	 * al usuario, si no existe se crea con su fichero correspondiente
 	 * 
 	 * @param {User} user Usuario de discord
 	 * @returns objeto de tipo UserPlaylist
 	 */
-	static create(user) {
-		if(!(this.player instanceof Player))
-			throw new Error("Falta el objeto de tipo Player");
+	create(user) {
 		if(!(user instanceof User))
 			throw new Error("El parámetro debe ser de tipo User");
-		return new UserPlaylist(user);
+		return new UserPlaylist(user, this);
 	}
 
 	/**
@@ -221,9 +279,9 @@ export default class PlaylistManager {
 	 * @param {User} user Usuario de discord
 	 * @returns objeto de tipo UserPlaylist o null
 	 */
-	static get(user) {
+	get(user) {
 		if(!(user instanceof User))
 			throw new Error("El parámetro debe ser de tipo User");
-		return PlaylistManager.exists(user) ? this.create(user) : null;
+		return this.exists(user.id) ? this.create(user) : null;
 	}
 }

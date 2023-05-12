@@ -4,6 +4,7 @@ export default async function(cadena, cmdName, args) {
 	switch (cmdName) {
 		case "t":
 		case "test":
+			console.log(this.modules.get("Music").musicController.player.scanDeps());
 			break;
 		case "pl":
 			console.log(`Lista de plugins:`);

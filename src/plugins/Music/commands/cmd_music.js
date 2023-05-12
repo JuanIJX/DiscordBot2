@@ -67,8 +67,9 @@ export default async function(message, cmdName, args) {
 				// cadURL = "https://open.spotify.com/track/6MTd61g9zq6CB1FnJydjEb"; // esta si se reproduce aunq sea la misma q la de abajo
 				//cadURL = "https://open.spotify.com/track/6yjEYK1gwGlTlD04cRm1t9";
 				//cadURL = "https://www.youtube.com/watch?v=rqa1zbSqR6M";
+				cadURL = "https://www.youtube.com/watch?v=eQKHqp8hzvs";
 
-				//channel = message.guild.channels.cache.get("970075135912591370");
+				channel = message.guild.channels.cache.get("970075135912591370");
 				searchResult = await this.musicController.search(cadURL, { requestedBy: message.author });
 				queue ??= this.musicController.createQueue(message.guildId,);
 				queue.addTrack(searchResult);
@@ -290,6 +291,7 @@ export default async function(message, cmdName, args) {
 							}
 							this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) añadió ${searchResult.playlist ? `${searchResult.tracks.length} canciones` : `'${searchResult.tracks[0].title}'`}`);
 						} catch (error) {
+							//console.log(error);
 							await message.reply(`Error`);
 							this.log(Level.ERROR, error);
 						}

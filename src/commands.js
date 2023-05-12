@@ -2,9 +2,8 @@ import { wait } from "./libraries/utils.mjs";
 
 export default async function(cadena, cmdName, args) {
 	switch (cmdName) {
+		case "t":
 		case "test":
-			console.log(this.discordManager.discord.application.commands);
-			//generateDependencyReport();
 			break;
 		case "pl":
 			console.log(`Lista de plugins:`);

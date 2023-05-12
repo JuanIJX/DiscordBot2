@@ -1,7 +1,7 @@
 import { Level } from "../../libraries/logger.js";
-import { Player, EqualizerConfigurationPreset } from "./DiscordPlayer.cjs"
+import { Player, EqualizerConfigurationPreset, GuildQueueEvent, PlayerEvent } from "./DiscordPlayer.cjs"
 import PlaylistManager from "./myplaylist.js";
-import Queue from "./queue.js";
+import Queue2 from "./queueown.js";
 export default class MusicController {
 	constructor(module) {
 		Object.defineProperty(this, "module", { value: module, enumerable: true });
@@ -10,20 +10,18 @@ export default class MusicController {
 			ytdlOptions: { quality: "highestaudio", highWaterMark: 1 << 25 }
 		}), enumerable: true });
 		Object.defineProperty(this, "_config", { value: this.module.configManager.get("queue").content });
+		Object.defineProperty(this, "playlistManager", { value: new PlaylistManager(this.player, this.module.thisPath ) });
 	}
 
 	async load() {
 		await this.player.extractors.loadDefault();
 
-		PlaylistManager.player = this.player;
-		PlaylistManager.pluginPath = this.module.thisPath;
-
-		this.player.events.on('playerStart', (queue, track) => this.module.log(Level.DEBUG, `(g: ${queue.id}) Canción iniciada '${track.title}'`));
-		this.player.events.on('playerFinish', (queue, track) => this.module.log(Level.DEBUG, `(g: ${queue.id}) Canción finalizada '${track.title}'`));
+		this.player.events.on(GuildQueueEvent.playerStart, (queue, track) => this.module.log(Level.DEBUG, `(g: ${queue.id}) Canción iniciada '${track.title}'`));
+		this.player.events.on(GuildQueueEvent.playerFinish, (queue, track) => this.module.log(Level.DEBUG, `(g: ${queue.id}) Canción finalizada '${track.title}'`));
 		if(this._config?.debug?.player === true)
-			this.player.on('debug', msg => console.log(msg));
+			this.player.on(PlayerEvent.debug, msg => console.log(msg));
 		if(this._config?.debug?.queue === true)
-			this.player.events.on('debug', (queue, msg) => console.log(msg));
+			this.player.events.on(GuildQueueEvent.debug, (queue, msg) => console.log(`${queue.id} ${msg}`));
 	}
 
 	/**
@@ -50,14 +48,54 @@ export default class MusicController {
 	 * @param {import("discord.js/typings/index.js").Snowflake} guildID ID of guild
 	 * @returns Queue
 	 */
-	createQueue(guildID) {
-		return new Queue(this.player.queues.create(guildID, {
+	createQueue(guild) {
+		return this._createQueue(guild, {
 			leaveOnEmpty: false,
 			leaveOnEnd: false,
 			leaveOnStop: false,
 			selfDeaf: false,
-			volume: this._config?.volume ?? 100,
-		}), this);
+			volume: this._config?.volume,
+			timeAutoOff: this._config?.leaveOnEnd
+		});
+	}
+
+	_createQueue(guild, options = {}) {
+		const cache = this.player.queues.cache;
+		const server = this.player.client.guilds.resolve(guild);
+		if (!server)
+			throw new Error("Invalid or unknown guild");
+		if (cache.has(server.id))
+			return cache.get(server.id);
+
+		const queue = new Queue2(this, {
+			guild: server,
+			queueStrategy: options.strategy ?? "FIFO",
+			volume: options.volume ?? 100,
+			equalizer: options.equalizer ?? [],
+			filterer: options.a_filter ?? [],
+			biquad: options.biquad,
+			resampler: options.resampler ?? 48e3,
+			disableHistory: options.disableHistory ?? false,
+			skipOnNoStream: options.skipOnNoStream ?? false,
+			onBeforeCreateStream: options.onBeforeCreateStream,
+			onAfterCreateStream: options.onAfterCreateStream,
+			repeatMode: options.repeatMode,
+			leaveOnEmpty: options.leaveOnEmpty ?? true,
+			leaveOnEmptyCooldown: options.leaveOnEmptyCooldown ?? 0,
+			leaveOnEnd: options.leaveOnEnd ?? true,
+			leaveOnEndCooldown: options.leaveOnEndCooldown ?? 0,
+			leaveOnStop: options.leaveOnStop ?? true,
+			leaveOnStopCooldown: options.leaveOnStopCooldown ?? 0,
+			metadata: options.metadata,
+			connectionTimeout: options.connectionTimeout ?? this.player.options.connectionTimeout ?? 12e4,
+			selfDeaf: options.selfDeaf ?? true,
+			ffmpegFilters: options.defaultFFmpegFilters ?? [],
+			bufferingTimeout: options.bufferingTimeout ?? 1e3,
+			noEmitInsert: options.noEmitInsert ?? false,
+			timeAutoOff: options.timeAutoOff,
+		});
+		cache.set(server.id, queue);
+		return queue;
 	}
 
 	/**
@@ -67,7 +105,7 @@ export default class MusicController {
 	 * @returns Queue or null
 	 */
 	getQueue(guildID) {
-		return this.player.queues.has(guildID) ? new Queue(this.player.queues.get(guildID)) : null;
+		return this.player.queues.has(guildID) ? this.player.queues.get(guildID) : null;
 	}
 
 	/**

@@ -73,7 +73,7 @@ export default class Main {
 			`--------------------------------------`,
 			`\t\t${this.constructor.nombre} ${this.constructor.version}`,
 			`--------------------------------------`,
-			"",
+			``,
 		]);
 
 		KeyB.onClose(async () => { await this._stop(); });

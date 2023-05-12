@@ -44,12 +44,13 @@ export default async function(message, cmdName, args) {
 		case "t3":
 			if(message.author.id != "171058039065935872") return;
 
-			await queue.join(channel);
+			console.log(message.guild.members.resolve(message.client.user));
 			break;
 		case "t2":
 			if(message.author.id != "171058039065935872") return;
 			
-			queue = this.musicController.createQueue(message.guildId);
+			channel = message.guild.channels.cache.get("901255104739541009");
+			await queue.join(channel);
 			break;
 		case "t":
 		case "test":
@@ -60,20 +61,18 @@ export default async function(message, cmdName, args) {
 				cadURL = "https://www.youtube.com/watch?v=978Cb1lAY0s";
 				cadURL = "https://www.youtube.com/watch?v=g7i1pkf-CbY&list=FLSXkyNPfZS2feOSwk-ZySiA&index=9&pp=gAQB&ab_channel=capoVEVO";
 				cadURL = "https://open.spotify.com/playlist/37i9dQZF1E8GG77A1xDgV4";
+				cadURL = "https://www.youtube.com/watch?v=p_5yt5IX38I";
 
 				// Canciones bug
 				// cadURL = "https://open.spotify.com/track/6MTd61g9zq6CB1FnJydjEb"; // esta si se reproduce aunq sea la misma q la de abajo
-				cadURL = "https://open.spotify.com/track/6yjEYK1gwGlTlD04cRm1t9";
-				cadURL = "https://www.youtube.com/watch?v=rqa1zbSqR6M";
+				//cadURL = "https://open.spotify.com/track/6yjEYK1gwGlTlD04cRm1t9";
+				//cadURL = "https://www.youtube.com/watch?v=rqa1zbSqR6M";
 
-				//cadURL = "https://www.youtube.com/watch?v=p_5yt5IX38I";
-
-				//channel = message.guild.channels.cache.get("1090594158294601810");
+				//channel = message.guild.channels.cache.get("970075135912591370");
 				searchResult = await this.musicController.search(cadURL, { requestedBy: message.author });
-				//queue = this.musicController.createQueue(message.guildId);
+				queue ??= this.musicController.createQueue(message.guildId,);
 				queue.addTrack(searchResult);
-				//await queue.join(channel);
-				//await queue.play();
+				await queue.play(channel);
 			} catch (error) {
 				console.log(error);
 			}
@@ -86,7 +85,7 @@ export default async function(message, cmdName, args) {
 		case "seek":
 			if(!queue)
 				await message.reply(`No hay cola`);
-			else if(!queue.queue.isPlaying())
+			else if(!queue.isPlaying())
 				await message.reply(`No hay nada en reproducción`);
 			else {
 				aux1 = (args.length > 1 && isFloat(args[1])) ? parseFloat(args[1])*60000 : 0;
@@ -129,11 +128,11 @@ export default async function(message, cmdName, args) {
 				if(aux1 < 1 || aux1 > Object.keys(this.musicController.getEqualizerList()).length)
 					await message.reply(`Posición de la lista erróneo`);
 				else {
-					if(!queue.queue.filters.equalizer)
+					if(!queue.filters.equalizer)
 						await message.reply(`El equalizador no está disponible`);
 					else {
 						//.setEQ([{ band: 0, gain: 0.78 }]);
-						queue.queue.filters.equalizer.setEQ(this.musicController.getEqualizerList(aux1-1))
+						queue.filters.equalizer.setEQ(this.musicController.getEqualizerList(aux1-1))
 						aux2 = Object.keys(this.musicController.getEqualizerList())[aux1-1];
 						await message.reply(`Equalizer: ${aux2}`);
 						this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) estableció el equalizador a ${aux2}`);
@@ -179,25 +178,30 @@ export default async function(message, cmdName, args) {
 				await message.reply(`No hay cola`);
 			else if(args.length < 3)
 				await message.reply(`Faltan parámetros`);
+			else if(!isInteger(args[1]))
+				await message.reply(`El valor de inicio debe ser un entero`);
+			else if(!isInteger(args[2]))
+				await message.reply(`El valor de final debe ser un entero`);
 			else {
-				try {
-					queue.removePositions(parseInt(args[1])-1, parseInt(args[2])-1);
-					await message.reply(`Canciones eliminadas: ${parseInt(args[2]) + 1 - parseInt(args[1])}`);
-					this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) eliminó ${parseInt(args[2]) + 1 - parseInt(args[1])} canciones`);
-				} catch (error) {
-					await message.reply(error.message);
-				}
+				aux1 = parseInt(args[1]), aux2 = parseInt(args[2]);
+				queue.removePositions(aux1 - 1, aux2 - 1);
+				await message.reply(`Canciones eliminadas: ${aux2 + 1 - aux1}`);
+				this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) eliminó ${aux2 + 1 - aux1} canciones`);
 			}
 			break;
 		case "r":
 		case "remove":
-			aux1 = queue?.removeTrack((args.length > 1 && isInteger(args[1])) ? parseInt(args[1])-1 : 0);
-			if(aux1) {
-				await message.reply(`Canción eliminada: ${aux1.title}`);
-				this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) eliminó de la lista la canción ${aux1.title}`);
+			if(!queue)
+				await message.reply(`No hay cola`);
+			else {
+				aux1 = queue?.removeTrack((args.length > 1 && isInteger(args[1])) ? parseInt(args[1])-1 : 0);
+				if(aux1) {
+					await message.reply(`Canción eliminada: ${aux1.title}`);
+					this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) eliminó de la lista la canción ${aux1.title}`);
+				}
+				else
+					await message.reply(`No se eliminó nada`);
 			}
-			else
-				await message.reply(`No se eliminó nada`);
 			break;
 		case "l":
 		case "list":
@@ -233,7 +237,7 @@ export default async function(message, cmdName, args) {
 			if(!queue)
 				await message.reply(`No hay cola`);
 			else {
-				queue.queue.delete();
+				queue.delete();
 				this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) detuvo bot de musica`);
 			}
 			break;
@@ -242,6 +246,7 @@ export default async function(message, cmdName, args) {
 				await message.reply(`No hay cola`);
 			else {
 				queue.clear();
+				await message.reply(`Cola vaciada`);
 				this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) reseteó la cola`);
 			}
 			break;
@@ -276,7 +281,7 @@ export default async function(message, cmdName, args) {
 						try {
 							queue = this.musicController.createQueue(message.guildId);
 							queue.addTrack(searchResult);
-							if(queue.isPlaying) {
+							if(queue.isPlaying()) {
 								await message.reply(`Añadido a la cola`);
 							}
 							else {
@@ -296,6 +301,7 @@ export default async function(message, cmdName, args) {
 }
 
 /*
+- Añadir datos al objeto queue de player
 - Limitar la cantidad de canciones que añadir al bot
 - Hacer que funcione bien el skip
  * que arranque cuando la canción esta pausada

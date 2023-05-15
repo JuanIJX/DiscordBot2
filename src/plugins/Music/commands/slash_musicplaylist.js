@@ -1,8 +1,14 @@
 import { SlashCommandBuilder } from "discord.js";
+import { wait } from "../../../libraries/utils.mjs"
 export default {
 	slash: new SlashCommandBuilder()
 		.setName('playlist')
 		.setDescription('Comando para playlist de usuario')
+
+		.addSubcommand(subcommand => subcommand
+			.setName('test')
+			.setDescription('Comando de pruebas solo para el creador del bot')
+		)
 
 		.addSubcommand(subcommand => subcommand
 			.setName('list')
@@ -139,10 +145,9 @@ export default {
 		)
 	,		
 	async execute(interaction) {
-		const user = interaction.user;
-		const channel = interaction.member.voice.channel;
+		const { user, member, options: ops } = interaction;
+		const channel = member.voice.channel;
 		const playlistManager = this.musicController.playlistManager;
-		const ops = interaction.options;
 		const cmdName = ops.getSubcommandGroup() ?? ops.getSubcommand(false);
 		
 		let userPlayList = playlistManager.get(user);
@@ -152,6 +157,14 @@ export default {
 		let aux_1, aux_2, aux_3, aux_4;
 
 		switch (cmdName) {
+			case "test":
+				//await interaction.deferReply();
+				if(user.id != "171058039065935872") return;
+
+				await interaction.deferReply({ ephemeral: true });
+				await wait(4000);
+				//await interaction.followUp({ content: "eeeee", ephemeral: true });
+				return;
 			case "list":
 				if(!userPlayList || userPlayList.size == 0)
 					return "No hay listas de reproducción";
@@ -253,14 +266,17 @@ export default {
 						aux_3 = await myPlaylist.getTracks(aux_1, aux_2, user);
 						queue = this.musicController.createQueue(interaction.guild.id);
 						queue.addTrack(aux_3);
-						if(queue.isPlaying)
+						if(queue.isPlaying())
 							return `Añadido a la cola`;
-						queue.play(channel).then(() => interaction.editReply('Reproduciendo!'));
-						return `Tratando de reproducir...`;
+
+						await interaction.deferReply({ ephemeral: true });
+						await queue.play(channel);
+						await interaction.followUp({ content: `Reproduciendo!`, ephemeral: true });
+						return;
 					case "clear":
 						if(ops.getInteger("index") > userPlayList.size)
 							return `Index máximo: ${userPlayList.size}`
-						userPlayList.at(ops.getInteger("index")-1).clear();
+						userPlayList.at(ops.getInteger("index") - 1).clear();
 						userPlayList.save();
 						return `Lista vaciada`;
 				}

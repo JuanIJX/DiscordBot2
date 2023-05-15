@@ -139,7 +139,7 @@ export default class SlashManager {
 async function _execCmd(interaction, action, params) {
 	// Meter al usuario en lista negra para q no spamee el comando, la lista sera por cada guild y por user
 	const response = await action(...params);
-	if(response !== undefined) {
+	if(response !== undefined && response !== null) {
 		if(typeof response == "string")
 			await interaction.reply({ content: response, ephemeral: true });
 		else

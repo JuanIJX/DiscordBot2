@@ -1,5 +1,5 @@
 /**
- * Last modified: 06/05/2023
+ * Last modified: 16/05/2023
  */
 
 import url from "url"
@@ -354,10 +354,10 @@ export function stringifyNoCircular(obj, space=null) {
 	}, space);
 }
 
-export function createDirs() {
-	if(!fs.existsSync(this._src)) {
+export function createDirs(src) {
+	if(!fs.existsSync(src)) {
 		var totalpath = ".";
-		for(const dir of this._src.split("\\")) {
+		for(const dir of src.split("\\")) {
 			totalpath = path.join(totalpath, dir);
 			if(!fs.existsSync(totalpath))
 				fs.mkdirSync(totalpath);

@@ -2,6 +2,7 @@
  * Last modified: 16/05/2023
  */
 
+import fs from "fs"
 import url from "url"
 import path from "path"
 import { exec } from "child_process";

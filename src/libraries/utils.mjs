@@ -353,3 +353,14 @@ export function stringifyNoCircular(obj, space=null) {
 	return value;
 	}, space);
 }
+
+export function createDirs() {
+	if(!fs.existsSync(this._src)) {
+		var totalpath = ".";
+		for(const dir of this._src.split("\\")) {
+			totalpath = path.join(totalpath, dir);
+			if(!fs.existsSync(totalpath))
+				fs.mkdirSync(totalpath);
+		}
+	}
+}

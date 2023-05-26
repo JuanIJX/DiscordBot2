@@ -37,11 +37,13 @@ export default class Sqlite {
 	get version() { return this._version }
 
 	async close() {
-		return new Promise((resolve, reject) => this.idbd.close(function(err) {
-			if(err) return reject(err);
-			this._connected = false;
-			resolve();
-		}));
+		if(this._connected) {
+			return new Promise((resolve, reject) => this.idbd.close(function(err) {
+				if(err) return reject(err);
+				this._connected = false;
+				resolve();
+			}));
+		}
 	}
 
 	async execute(command, ...params) {

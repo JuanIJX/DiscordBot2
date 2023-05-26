@@ -1,9 +1,9 @@
 import fs from "fs";
 import path from "path"
-import Config from "../../libraries/config.js";
-import { getDate } from "../../libraries/utils.mjs";
+import { createDirs, getDate } from "../../libraries/utils.mjs";
 import { Player, SearchResult, Track, Util } from "./DiscordPlayer.cjs"
 import { User } from "discord.js";
+import Sqlite from "../../libraries/SQL_sqlite3.js";
 
 export class MyPlaylist {
 
@@ -14,9 +14,7 @@ export class MyPlaylist {
      * - author
      * - url
      * - thumbnail
-     * - duration
-     * - durationMS
-	 * 
+     * - duration (ms)
 	 */
 	static _toJSON(track) {
 		if(!(track instanceof Track))
@@ -26,92 +24,132 @@ export class MyPlaylist {
 		delete json.requestedBy;
 		delete json.playlist;
 		delete json.views;
+		json.duration = json.durationMS;
+		delete json.durationMS;
 		return json;
 	}
 
-	constructor(parent, name, options) {
+	static filterData(data) {
+		if(!data)
+			return null;
+		delete data.id_playlist;
+		delete data.pos;
+		return data;
+	}
+
+	static readableDuration(duration) {
+		return Util.buildTimeCode(Util.parseMS(duration));
+	}
+
+	constructor(parent, id, name, options) {
 		Object.defineProperty(this, "_parent", { value: parent });
+
+		Object.defineProperty(this, "_id", { value: id });
 		Object.defineProperty(this, "_name", { value: name, writable: true });
 		Object.defineProperty(this, "_description", { value: options?.description ?? "", writable: true });
 		Object.defineProperty(this, "_date", { value: options?.date ?? getDate() });
-		Object.defineProperty(this, "_tracks", { value: [] });
+		Object.defineProperty(this, "_size", { value: options?.size ?? 0, writable: true });
+		Object.defineProperty(this, "_lastPos", { value: options?.pos ?? 1, writable: true });
 	}
 
-	get index() { return this._parent.lists.indexOf(this); }
-	get size() { return this._tracks.length; }
+	get _data() { return this._parent._data; }
+	get id() { return this._id; }
 	get name() { return this._name; }
 	get description() { return this._description; }
 	get date() { return this._date; }
-	get tracks() { return this._tracks; }
-	get totalDuration() { return Util.buildTimeCode(Util.parseMS(this.tracks.reduce((a, c) => a + c.durationMS, 0))); }
+	get index() { return this._parent.lists.indexOf(this); }
+	get size() { return this._size; }
 
-	async search(song, options={}) { return await this._parent.manager.player.search(song, options); }
-	save() { this._parent.save(); }
-	setName(name) { this._name = name; }
-	setDescription(description) { this._description = description; }
-	at(index) { return index >= 0 && index < this.size ? this.tracks[index] : null; }
-	clear() { this._tracks.splice(0, this.size); }
-	delete() { this._parent.remove(this.index); }
+	
+	async getList(offset, limit=1) { return await this._data.rows(`SELECT * FROM ${PlaylistManager._tableName_tracks} WHERE id_playlist = ? ORDER BY pos ASC${offset===undefined ? "" : ` LIMIT ${limit} OFFSET ${offset}`};`, this.id); }
+	async setName(name) { this._data.execute(`UPDATE ${PlaylistManager._tableName_playlists} SET name = ? WHERE id = ?;`, name, this.id); this._name = name; }
+	async setDescription(description=null) { this._data.execute(`UPDATE ${PlaylistManager._tableName_playlists} SET description = ? WHERE id = ?;`, description, this.id); this._description = description; }
+	async at(index) { return index >= 0 && index < this.size ? this.constructor.filterData(await this._data.row(`SELECT * FROM ${PlaylistManager._tableName_tracks} WHERE id_playlist = ? ORDER BY pos ASC LIMIT 1 OFFSET ?;`, [this.id, index])) : null; }
+	async clear() { this._data.execute(`DELETE FROM ${PlaylistManager._tableName_tracks} WHERE id_playlist = ?`, this.id); this._size = 0; }
+	async delete() { await this._parent.remove(this.index); }
+	async getTotalDuration() { return parseInt((await this._data.row(`SELECT COALESCE(SUM(duration), 0) as totalDuration FROM tracks WHERE id_playlist = ?;`, this.id)).totalDuration); }
 
-	remove(index, size=1) {
-		if(index < 0 || index >= this.size)
-			return [];
 
-		const deletedTracks = this._tracks.slice(index, index + size);
-		this._tracks.splice(index, size);
+	// Se pueden eliminar varios
+	async remove(index, size=1) {
+		if(index < 0 || index >= this.size) return [];
+			
+		const deletedTracks = await this.getList(index, size);
+		await this._data.execute(`
+			DELETE FROM ${PlaylistManager._tableName_tracks}
+			WHERE id_playlist = ? AND url IN (
+				SELECT url
+				FROM ${PlaylistManager._tableName_tracks}
+				WHERE id_playlist = ?
+				ORDER BY pos ASC
+				LIMIT ? OFFSET ?
+			);`, [this.id, this.id, size, index]);
+		this._size -= deletedTracks.length;
 		return deletedTracks;
 	}
 
-	add(searchResult) {
-		if(!(searchResult instanceof SearchResult))
-			throw new Error("Se debe introducir un SearchResult");
-
-		const tracks = searchResult.tracks
-			.filter(track => !this.tracks.find(tr => tr.url == track.url))
-			.map(track => this.constructor._toJSON(track));
-		this.tracks.push(...tracks);
+	async _add(tracks) {
+		const tracksBD = await this.getList() ?? [];
+		tracks = (Array.isArray(tracks) ? tracks : [tracks]).filter2(track => !tracksBD.find(tr => tr.url == track.url));
+		for (const track of tracks) {
+			await this._data.execute(
+				`INSERT INTO tracks (id_playlist, pos, url, title, description, author, thumbnail, duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+				[this.id, ++this._lastPos, track.url, track.title, track.description ?? null, track.author ?? null, track.thumbnail ?? null, track.durationMS ?? track.duration ?? 0]
+			);
+			this._size++;
+		}
 		return tracks;
 	}
 
-	async addSearch(song) {
-		const searchResult = await this.search(song);
-		if(!searchResult.hasTracks())
-			return [];
-		return this.add(searchResult);
+	async add(searchResult) {
+		if(!(searchResult instanceof SearchResult))
+			throw new Error("Se debe introducir un SearchResult");
+		return await this._add(searchResult.tracks);
+	}
+
+	async _getTracks(pos1, pos2, user) {
+		const tracksBD = await this.getList();
+		const tracks = [];
+		for (let index = pos1; index <= pos2; index++)
+			tracks.push((await this.search(tracksBD[index].url, { requestedBy: user })).tracks[0]);
+		return tracks;
 	}
 
 	async getTracks(pos1, pos2, user) {
+		const tracksBD = await this.getList();
 		const tracks = [];
 		for (let index = pos1; index <= pos2; index++)
-			tracks.push((await this.search(this.tracks[index].url, { requestedBy: user })).tracks[0]);
-		return tracks;
+			tracks.push((await this.search(tracksBD[index].url, { requestedBy: user })).tracks[0]);
+		return tracks.map(t => this.constructor.filterData(t));
 	}
 
 	async getTrack(index, user) {
 		return (await this.getTracks(index, index, user))[0];
 	}
 
-	addTracksJson(tracksJson) { this.tracks.push(...tracksJson); }
 	toJSON() {
 		return {
 			name: this.name,
 			description: this.description,
 			date: this.date,
-			tracks: this.tracks
+			tracks: this.size
 		};
 	}
 
-	embed(pag, pagSize) {
-		const pagMax = Math.ceil(this.size / pagSize) - 1;
+	async embed(pag, pagSize) {
 		pag = pag < 0 ? this.size : pag;
+		const pagMax = Math.ceil(this.size / pagSize) - 1;
 		const sl1 = pag * pagSize;
-		const sl2 = sl1 + pagSize;
+		const duration = await this.getTotalDuration();
+		var tracksBD = [];
 
 		let pagView = pag + 1;
 		if(this.size == 0)
 			pagView = 0;
 		else if(pag < 0 || pag > pagMax)
 			pagView = "?";
+		else
+			tracksBD = await this.getList(sl1, pagSize);
 
 		return {
 			title: `[${(this.index+1)}] ${this.name}`,
@@ -120,9 +158,8 @@ export class MyPlaylist {
 				``,
 				`**Tracks [${pagView}/${pagMax+1}]**`,
 				this.size > 0 ?
-					this.tracks
-						.slice(sl1, sl2)
-						.map((track, i) => `**${sl1+i+1}.** [${track.title.suspensivos(64)}](${track.url}) ${track.duration}`)
+					tracksBD
+						.map((track, i) => `**${sl1+i+1}.** [${track.title.suspensivos(64)}](${track.url}) ${this.constructor.readableDuration(track.duration)}`)
 						.join("\n") :
 					"No hay canciones"
 			]
@@ -135,7 +172,7 @@ export class MyPlaylist {
 					name: "Estadísticas",
 					value: [
 						`Cantidad canciones: ${this.size}`,
-						`Tiempo total: ${Util.buildTimeCode(Util.parseMS(this.tracks.reduce((a, c) => a + c.durationMS, 0)))}`,
+						`Tiempo total: ${this.constructor.readableDuration(duration)}`,
 					].join("\n")
 				},
 			]
@@ -144,82 +181,95 @@ export class MyPlaylist {
 }
 
 export class UserPlaylist {
-	static _maxlists = 10;
-
 	constructor(user, manager) {
-		Object.defineProperty(this, "manager", { value: manager });
+		Object.defineProperty(this, "_manager", { value: manager });
+
 		Object.defineProperty(this, "_id", { value: user.id });
 		Object.defineProperty(this, "_tag", { value: user.tag });
-		Object.defineProperty(this, "_created", { value: getDate(), writable: true });
 		Object.defineProperty(this, "_lists", { value: [] });
-		Object.defineProperty(this, "_file", { value: manager.getFilePath(this._id) });
-		Object.defineProperty(this, "_config", { value: new Config(this._file, this.toJSON()) });
+		Object.defineProperty(this, "_file", { value: this._manager.getFilePath(this._id) });
 
-		this._created = this._config.content.created;
-		for (const myPlaylistJson of this._config.content.lists) {
-			const myPlaylist = new MyPlaylist(this, myPlaylistJson.name, {
-				description: myPlaylistJson.description,
-				date: new Date(myPlaylistJson.date),
-			});
-			myPlaylist.addTracksJson(myPlaylistJson.tracks);
-			this._lists.push(myPlaylist);
-		}
+		Object.defineProperty(this, "_data", { value: new Sqlite(this._file) });
 	}
 
 	get id() { return this._id; }
 	get tag() { return this._tag; }
-	get created() { return this._created; }
 	get lists() { return this._lists.slice(); }
 	get size() { return this._lists.length; }
 
-	save() {
-		this._config.save(this.toJSON());
+	// BD
+	async load() {
+		if(this._manager.exists(this.id)) {
+			await this._data.connect([`PRAGMA foreign_keys = ON;`]);
+			for (const myPlaylistObj of await this._data.rows(`SELECT * FROM ${PlaylistManager._tableName_playlists};`)) {
+				const infoTracks = await this._data.row(`SELECT COUNT(*) as count, MAX(pos) lastpos FROM ${PlaylistManager._tableName_tracks} WHERE id_playlist = ?;`, myPlaylistObj.id);
+				this._lists.push(new MyPlaylist(this, myPlaylistObj.id, myPlaylistObj.name, {
+					description: myPlaylistObj.description,
+					date: new Date(myPlaylistObj.date),
+					size: infoTracks.count,
+					pos: infoTracks.lastpos ?? 0
+				}));
+			}
+		}
+		else {
+			createDirs(path.dirname(this._file));
+			await this._data.connect([`PRAGMA foreign_keys = ON;`]);
+			await this._data.execute(PlaylistManager._table_playlists);
+			await this._data.execute(PlaylistManager._table_tracks);
+		}
+		return this;
 	}
 
 	at(position) {
 		return this._lists[position] ?? null;
 	}
 
-	create(name, track, options) {
-		if(this._lists.length >= this.constructor._maxlists)
+	// BD
+	async create(name, option) {
+		if(this._lists.length >= PlaylistManager._maxlists)
 			throw new Error("Máximo de listas excedido");
 
-		const myPlaylist = new MyPlaylist(this, name, options);
-		if(track)
-			myPlaylist.add(track, false);
+		const { lastID } = await this._data.execute(`INSERT INTO ${PlaylistManager._tableName_playlists} (name, description) VALUES (?, ?);`, [name, option?.description ?? null]);
+		const myPlaylist = new MyPlaylist(this, lastID, name, option);
 		this._lists.push(myPlaylist);
 		return myPlaylist;
 	}
 
-	remove(index) {
+	// BD
+	async remove(index) {
 		if(index >= 0 && index < this.size) {
 			const myPlaylist = this._lists[index];
+			console.log(`Eliminar: ${myPlaylist.id}`);
+			await this._data.execute(`DELETE FROM ${PlaylistManager._tableName_playlists} WHERE id = ?`, myPlaylist.id);
 			this._lists.splice(index, 1);
 			return myPlaylist;
 		}
 		return null;
 	}
 
+	async close() {
+		await this._data.close();
+	}
+
 	toJSON() {
 		return {
 			id: this._id,
 			tag: this._tag,
-			created: this._created,
 			lists: this._lists.map(mpl => mpl.toJSON())
 		};
 	}
 
-	embed() {
+	async embed() {
 		return {
 			title: `Mis playlist`,
-			fields: this._lists.map((list, i) => {
+			fields: await this._lists.mapAsync(async (list, i) => {
 				return {
 					name: `[${(i+1)}] - ${list.name}`,
 					value: [
 						`Creado el: ${list.date.format("Y-m-d H:i")}`,
 						list.description!="" ? `Description: ${list.description}` : null,
 						`Tracks: ${list.size}`,
-						`Duración: ${list.totalDuration}`,
+						`Duración: ${MyPlaylist.readableDuration(await list.getTotalDuration())}`,
 					].filter(e => e!=null).join("\n")
 				};
 			})
@@ -228,13 +278,35 @@ export class UserPlaylist {
 }
 
 export default class PlaylistManager {
+	static _maxlists = 10;
 	static _srcFile = "data/playlists";
+	static _tableName_playlists = "playlists";
+	static _tableName_tracks = "tracks";
+	static _table_playlists = `CREATE TABLE IF NOT EXISTS ${this._tableName_playlists} (
+		id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+		name VARCHAR(128) NOT NULL,
+		description TEXT,
+		date DATETIME DEFAULT (datetime('now', 'localtime'))
+	);`;
+	static _table_tracks = `CREATE TABLE IF NOT EXISTS ${this._tableName_tracks} (
+		id_playlist INTEGER NOT NULL,
+		pos INTEGER NOT NULL,
+		url VARCHAR(255) NOT NULL,
+		title VARCHAR(128) NOT NULL,
+		description TEXT,
+		author VARCHAR(128),
+		thumbnail VARCHAR(255),
+		duration INTEGER,
+		PRIMARY KEY (id_playlist, url),
+		UNIQUE (id_playlist, pos),
+		FOREIGN KEY (id_playlist) REFERENCES ${this._tableName_playlists}(id) ON DELETE CASCADE
+	);`;
 
 	constructor(player, pluginPath) {
-		if(!(player instanceof Player))
-			throw new Error("Falta el objeto de tipo Player");
+		/*if(!(player instanceof Player))
+			throw new Error("Falta el objeto de tipo Player");*/
 
-		Object.defineProperty(this, "player", { value: player, enumerable: true });
+		//Object.defineProperty(this, "player", { value: player, enumerable: true });
 		Object.defineProperty(this, "_pluginPath", { value: pluginPath });
 	}
 
@@ -246,7 +318,7 @@ export default class PlaylistManager {
 	 * @returns Devuelve la ruta
 	 */
 	getFilePath(id) {
-		return path.join(this._pluginPath, this.constructor._srcFile, `user_${id}.json`);
+		return path.join(this._pluginPath, this.constructor._srcFile, `user_${id}.sqlite`);
 	}
 
 	/**
@@ -264,12 +336,12 @@ export default class PlaylistManager {
 	 * al usuario, si no existe se crea con su fichero correspondiente
 	 * 
 	 * @param {User} user Usuario de discord
-	 * @returns objeto de tipo UserPlaylist
+	 * @returns objeto de tipo Promise<UserPlaylist>
 	 */
-	create(user) {
+	async create(user) {
 		if(!(user instanceof User))
 			throw new Error("El parámetro debe ser de tipo User");
-		return new UserPlaylist(user, this);
+		return (new UserPlaylist(user, this)).load();
 	}
 
 	/**
@@ -277,9 +349,9 @@ export default class PlaylistManager {
 	 * de existir, si no devuelve null
 	 * 
 	 * @param {User} user Usuario de discord
-	 * @returns objeto de tipo UserPlaylist o null
+	 * @returns objeto de tipo Promise<UserPlaylist> o null
 	 */
-	get(user) {
+	async get(user) {
 		if(!(user instanceof User))
 			throw new Error("El parámetro debe ser de tipo User");
 		return this.exists(user.id) ? this.create(user) : null;

@@ -149,140 +149,143 @@ export default {
 		const channel = member.voice.channel;
 		const playlistManager = this.musicController.playlistManager;
 		const cmdName = ops.getSubcommandGroup() ?? ops.getSubcommand(false);
-		
-		let userPlayList = playlistManager.get(user);
-		let myPlaylist = null;
-		let queue = null;
+		const userPlayList = await playlistManager.get(user)
+		const exec = await _exec.bind(this)(user, member, ops, channel, playlistManager, cmdName, userPlayList);
+		await userPlayList?.close();
 
-		let aux_1, aux_2, aux_3, aux_4;
+		return exec;
+	}
+}
 
-		switch (cmdName) {
-			case "test":
-				//await interaction.deferReply();
-				if(user.id != "171058039065935872") return;
+async function _exec(user, member, ops, channel, playlistManager, cmdName, userPlayList) {
+	let myPlaylist = null;
+	let queue = null;
+	let aux_1, aux_2, aux_3, aux_4;
 
-				await interaction.deferReply({ ephemeral: true });
-				await wait(4000);
-				//await interaction.followUp({ content: "eeeee", ephemeral: true });
-				return;
-			case "list":
-				if(!userPlayList || userPlayList.size == 0)
-					return "No hay listas de reproducción";
-				return this.getEmbed(userPlayList.embed(), true);
-			case "create":
-				userPlayList ??= playlistManager.create(user);
-				userPlayList
-					.create(ops.getString("name"))
-					.setDescription(ops.getString("description") ?? "")
-				userPlayList.save();
-				return `Creada la lista con el nombre: '${ops.getString("name")}'`;
-			case "delete":
-				if(!userPlayList || userPlayList.size == 0)
-					return "No hay listas de reproducción";
-				if(ops.getInteger("index") > userPlayList.size)
-					return `Index máximo: ${userPlayList.size}`
+	switch (cmdName) {
+		case "test":
+			//await interaction.deferReply();
+			if(user.id != "171058039065935872") return;
 
-				myPlaylist = userPlayList.remove(ops.getInteger("index")-1);
-				userPlayList.save();
-				return `Lista eliminada: ${myPlaylist?.name}`;
-			case "pl":
-				if(!userPlayList || userPlayList.size == 0)
-					return "No hay listas de reproducción";
+			await interaction.deferReply({ ephemeral: true });
+			await wait(4000);
+			//await interaction.followUp({ content: "eeeee", ephemeral: true });
+			return;
+		case "list":
+			if(!userPlayList || userPlayList.size == 0)
+				return "No hay listas de reproducción";
+			return this.getEmbed(await userPlayList.embed(), true);
+		case "create":
+			userPlayList ??= await playlistManager.create(user);
+			await (await userPlayList
+				.create(ops.getString("name")))
+				.setDescription(ops.getString("description"));
+			await userPlayList.close();
+			return `Creada la lista con el nombre: '${ops.getString("name")}'`;
+		case "delete":
+			if(!userPlayList || userPlayList.size == 0)
+				return "No hay listas de reproducción";
+			if(ops.getInteger("index") > userPlayList.size)
+				return `Index máximo: ${userPlayList.size}`
 
-				switch (ops.getSubcommand(false)) {
-					case "list":
-						if(ops.getInteger("index") > userPlayList.size)
-							return `Index máximo: ${userPlayList.size}`
-						myPlaylist = userPlayList.at(ops.getInteger("index")-1);
+			myPlaylist = await userPlayList.remove(ops.getInteger("index")-1);
+			return `Lista eliminada: ${myPlaylist?.name}`;
+		case "pl":
+			if(!userPlayList || userPlayList.size == 0)
+				return "No hay listas de reproducción";
 
-						return this.getEmbed(myPlaylist.embed((ops.getInteger("pag") ?? 1) - 1, 20), true);
-					case "add":
-						if(ops.getInteger("index") > userPlayList.size)
-							return `Index máximo: ${userPlayList.size}`
-						myPlaylist = userPlayList.at(ops.getInteger("index")-1);
+			switch (ops.getSubcommand(false)) {
+				case "list":
+					if(ops.getInteger("index") > userPlayList.size)
+						return `Index máximo: ${userPlayList.size}`
+					myPlaylist = userPlayList.at(ops.getInteger("index") - 1);
 
-						aux_2 = await playlistManager.player.search(ops.getString("song"));
-						if (!aux_2.hasTracks())
-							return `No se encuentra cancion alguna`;
-						aux_1 = await myPlaylist.add(aux_2);
-						userPlayList.save();
+					return this.getEmbed(await myPlaylist.embed((ops.getInteger("pag") ?? 1) - 1, 20), true);
+				case "add":
+					if(ops.getInteger("index") > userPlayList.size)
+						return `Index máximo: ${userPlayList.size}`
+					myPlaylist = userPlayList.at(ops.getInteger("index")-1);
 
-						if(aux_1.length == 0)
-							return `No se añadió ninguna canción`;
-						if(aux_1.length == 1)
-							return `Se añadió la canción '${aux_1[0].title}'`;
-						return `Se añadieron ${aux_1.length} canciones`;
-					case "remove":
-						if(ops.getInteger("index") > userPlayList.size)
-							return `Index máximo: ${userPlayList.size}`
-						myPlaylist = userPlayList.at(ops.getInteger("index")-1);
-						aux_1 = ops.getInteger("pos1") - 1;
-						aux_2 = (ops.getInteger("pos2") ?? ops.getInteger("pos1")) - 1;
+					aux_2 = await this.musicController.search(ops.getString("song"));
+					if (!aux_2.hasTracks())
+						return `No se encuentra cancion alguna`;
+					aux_1 = await myPlaylist.add(aux_2);
+
+					if(aux_1.length == 0)
+						return `No se añadió ninguna canción`;
+					if(aux_1.length == 1)
+						return `Se añadió la canción '${aux_1[0].title}'`;
+					return `Se añadieron ${aux_1.length} canciones`;
+				case "remove":
+					if(ops.getInteger("index") > userPlayList.size)
+						return `Index máximo: ${userPlayList.size}`
+					myPlaylist = userPlayList.at(ops.getInteger("index")-1);
+					aux_1 = ops.getInteger("pos1") - 1;
+					aux_2 = (ops.getInteger("pos2") ?? ops.getInteger("pos1")) - 1;
+					if(aux_2 < aux_1) {
+						let aux = aux_1;
+						aux_1 = aux_2;
+						aux_2 = aux;
+					}
+
+					aux_4 = myPlaylist.size;
+					aux_3 = await myPlaylist.remove(aux_1, aux_2 + 1 - aux_1);
+					switch (aux_3.length) {
+						case 0:
+							return `No se eliminó ninguna canción`
+						case 1:
+							return `Se eliminó la canción [${aux_1+1}] '${aux_3[0].title}'`;
+						default:
+							return `Se eliminaron del ${aux_1+1} al ${aux_2 < aux_4 ? aux_2+1 : aux_4} canciones (${aux_3.length})`;
+					}
+				case "play":
+					if(ops.getInteger("index") > userPlayList.size)
+						return `Index máximo: ${userPlayList.size}`
+					myPlaylist = userPlayList.at(ops.getInteger("index")-1);
+					
+					aux_1 = ops.getInteger("pos1");
+					aux_2 = ops.getInteger("pos2");
+					if(aux_1 == null) {
+						aux_1 = 0;
+						aux_2 = myPlaylist.size - 1;
+					}
+					else if(aux_2 == null) {
+						aux_1--;
+						aux_2 = aux_1;
+					}
+					else {
+						aux_1--;
+						aux_2--;
 						if(aux_2 < aux_1) {
 							let aux = aux_1;
 							aux_1 = aux_2;
 							aux_2 = aux;
 						}
+					}
 
-						aux_4 = myPlaylist.size;
-						aux_3 = myPlaylist.remove(aux_1, aux_2 + 1 - aux_1);
-						userPlayList.save();
-						switch (aux_3.length) {
-							case 0:
-								return `No se eliminó ninguna canción`
-							case 1:
-								return `Se eliminó la canción [${aux_1+1}] '${aux_3[0].title}'`;
-							default:
-								return `Se eliminaron del ${aux_1+1} al ${aux_2 < aux_4 ? aux_2+1 : aux_4} canciones (${aux_3.length})`;
-						}
-					case "play":
-						if(ops.getInteger("index") > userPlayList.size)
-							return `Index máximo: ${userPlayList.size}`
-						myPlaylist = userPlayList.at(ops.getInteger("index")-1);
-						
-						aux_1 = ops.getInteger("pos1");
-						aux_2 = ops.getInteger("pos2");
-						if(aux_1 == null) {
-							aux_1 = 0;
-							aux_2 = myPlaylist.size - 1;
-						}
-						else if(aux_2 == null) {
-							aux_1--;
-							aux_2 = aux_1;
-						}
-						else {
-							aux_1--;
-							aux_2--;
-							if(aux_2 < aux_1) {
-								let aux = aux_1;
-								aux_1 = aux_2;
-								aux_2 = aux;
-							}
-						}
+					if(aux_1 >= myPlaylist.size || aux_2 >= myPlaylist.size)
+						return `Posición de la canción máxima: ${myPlaylist.size}`
 
-						if(aux_1 >= myPlaylist.size || aux_2 >= myPlaylist.size)
-							return `Posición de la canción máxima: ${myPlaylist.size}`
+					aux_3 = await myPlaylist.getTracks(aux_1, aux_2, user);
+					queue = this.musicController.createQueue(interaction.guild.id);
+					queue.addTrack(aux_3);
+					if(queue.isPlaying())
+						return `Añadido a la cola`;
 
-						aux_3 = await myPlaylist.getTracks(aux_1, aux_2, user);
-						queue = this.musicController.createQueue(interaction.guild.id);
-						queue.addTrack(aux_3);
-						if(queue.isPlaying())
-							return `Añadido a la cola`;
-
-						await interaction.deferReply({ ephemeral: true });
-						await queue.play(channel);
-						await interaction.followUp({ content: `Reproduciendo!`, ephemeral: true });
-						return;
-					case "clear":
-						if(ops.getInteger("index") > userPlayList.size)
-							return `Index máximo: ${userPlayList.size}`
-						userPlayList.at(ops.getInteger("index") - 1).clear();
-						userPlayList.save();
-						return `Lista vaciada`;
-				}
-				break;
-		}
-
-		return "default value de la playlist";
+					await interaction.deferReply({ ephemeral: true });
+					await queue.play(channel);
+					await interaction.followUp({ content: `Reproduciendo!`, ephemeral: true });
+					return;
+				case "clear":
+					if(ops.getInteger("index") > userPlayList.size)
+						return `Index máximo: ${userPlayList.size}`
+					userPlayList.at(ops.getInteger("index") - 1).clear();
+					return `Lista vaciada`;
+			}
+			break;
 	}
+
+	await userPlayList.close();
+
+	return "default value de la playlist";
 }

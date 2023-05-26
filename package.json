@@ -35,6 +35,8 @@
     "fs": "^0.0.1-security",
     "opusscript": "^0.0.8",
     "sodium-native": "^4.0.1",
+    "sqlite3": "^5.1.6",
+    "sqlstring": "^2.3.3",
     "stack-trace": "^1.0.0-pre2",
     "utf-8-validate": "^6.0.3",
     "yaml": "^2.2.1",

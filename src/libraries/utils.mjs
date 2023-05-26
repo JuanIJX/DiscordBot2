@@ -55,6 +55,12 @@ Object.defineProperties(Array.prototype, {
 			}
 		}
 	}, configurable: true, writable: true },
+	"mapAsync": { value: async function(func) {
+		const newArray = [];
+		for (let i = 0; i < this.length; i++)
+			newArray.push(await func(this[i], i))
+		return newArray;
+	}, configurable: true, writable: true },
 });
 
 // Object

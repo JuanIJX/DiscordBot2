@@ -1,4 +1,5 @@
 import Sqlite3 from "sqlite3"
+import Sqlstring from "sqlstring"
 
 export default class Sqlite {
 
@@ -43,30 +44,33 @@ export default class Sqlite {
 		}));
 	}
 
-	async execute(command, params=[]) {
+	async execute(command, ...params) {
+		params = Array.isArray(params[0]) ? params[0] : params;
 		return new Promise((resolve, reject) => {
-			this._lastQuery = command;
-			this.idbd.run(this.lastQuery, params, function(err) {
+			this._lastQuery = Sqlstring.format(command, params);
+			this.idbd.run(command, params, function(err) {
 				if(err) return reject(err);
 				resolve(this);
 			});
 		});
 	}
 
-	async rows(command, params=[]) {
+	async rows(command, ...params) {
+		params = Array.isArray(params[0]) ? params[0] : params;
 		return new Promise((resolve, reject) => {
-			this._lastQuery = command;
-			this.idbd.all(this.lastQuery, params, function(err, result) {
+			this._lastQuery = Sqlstring.format(command, params);
+			this.idbd.all(command, params, function(err, result) {
 				if(err) return reject(err);
 				resolve(result);
 			});
 		});
 	}
 
-	async row(command, params=[]) {
+	async row(command, ...params) {
+		params = Array.isArray(params[0]) ? params[0] : params;
 		return new Promise((resolve, reject) => {
-			this._lastQuery = command;
-			this.idbd.get(this.lastQuery, params, function(err, result) {
+			this._lastQuery = Sqlstring.format(command, params);
+			this.idbd.get(command, params, function(err, result) {
 				if(err) return reject(err);
 				resolve(result);
 			});

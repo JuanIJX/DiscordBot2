@@ -1,5 +1,6 @@
 'use strict'
 
+import { EOL } from "os";
 import 'dotenv/config'
 import fs from "fs"
 import path from "path";
@@ -22,7 +23,7 @@ import Config from "../libraries/config.js";
 import DiscordManager from "./manager/discordmanager.js";
 import CommandManager from "./manager/commandmanager.js";
 import SlashManager from "./manager/slashcommandmanager.js";
-import { EOL } from "os";
+import EventManager from './manager/eventmanager.js';
 
 
 export default class Main {
@@ -56,10 +57,11 @@ export default class Main {
 		Object.defineProperty(this, '_discordManager', { value: new DiscordManager(this._logger, this._token) });
 		Object.defineProperty(this, '_commandManager', { value: new CommandManager(this._logger) });
 		Object.defineProperty(this, '_slashManager', { value: new SlashManager(this._logger) });
+		Object.defineProperty(this, '_eventManager', { value: new EventManager(this._logger, this._discordManager) });
 
 
 		//  ** FAST SETTINGS **
-		Object.assign(this._config, this._readCommandLineArgs());
+		this._readCommandLineArgs();
 
 		this.discordManager.discord.on(Events.MessageCreate, e => this._commandManager.handler(e));
 		this.discordManager.discord.on(Events.InteractionCreate, e => this._slashManager.handler(e));
@@ -85,9 +87,13 @@ export default class Main {
 		//  ** SLOW SETTINGS **
 
 		await this.discordManager.start();
+		if(this._config.clearCmds)
+			await this.discordManager.clearCommands();
+
 		await this.slashManager.load(this.discordManager.discord.application.commands);
 		await this._loadModules();
 		await this._startModules();
+		this.eventManager.load(this.modules);
 
 		this.log(Level.INFO, "Done!");
 		//this.log(Level.INFO, "Pero me paro!"); await wait(200); this.stop();
@@ -95,10 +101,12 @@ export default class Main {
 
 	log(level, msg) { this._logger.log(level, this.name, msg); }
 	get name() { return this.constructor.name; }
+	get logger() { return this._logger; }
 	get modules() { return this._modules; }
 	get discordManager() { return this._discordManager; }
 	get commandManager() { return this._commandManager; }
 	get slashManager() { return this._slashManager; }
+	get eventManager() { return this._eventManager; }
 
 	async stop() {
 		await KeyB.stop();
@@ -111,17 +119,19 @@ export default class Main {
 	}
 
 	_readCommandLineArgs() {
-		const config = {};
+		const config = this._config;
 		const args = [...process.argv.slice(2)];
 		while(args.length > 0) {
 			switch(args[0]) {
 				case "-debug":
 					config.debug = true;
 					break;
+				case "-clearcmds":
+					config.clearCmds = true;
+					break;
 			}
 			args.shift();
 		}
-		return config;
 	}
 
 	async _loadModules() {
@@ -150,7 +160,7 @@ export default class Main {
 					continue;
 
 				// Cargado con éxito
-				await instanciedModule._load(this._logger, this.discordManager, this.commandManager, this.slashManager);
+				await instanciedModule._load(this);
 				this.modules.set(classModuleName, instanciedModule);
 				this._logger.log(Level.DEBUG, this.name, `Plugin '${classModuleName}' cargado`);
 			} catch (error) {

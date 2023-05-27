@@ -85,4 +85,13 @@ export default class DiscordManager {
 			this.log(Level.DEBUG, "Bot de discord desconectado");
 		}
 	}
+
+	async clearCommands() {
+		const fetchCommands = await this.discord.application.commands.fetch();
+		for (let [_, value] of fetchCommands) {
+			const appCommand = await this.discord.application.commands.delete(value);
+			this.log(Level.DEBUG, `Slash command eliminado ${appCommand.name}(${appCommand.id}): ${appCommand.description}`);
+		}
+		this.log(Level.INFO, "Lista de slash commands vaciada");
+	}
 }

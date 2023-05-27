@@ -1,13 +1,11 @@
+import { Events } from "discord.js";
 import { wait } from "./libraries/utils.mjs";
 
 export default async function(cadena, cmdName, args) {
 	switch (cmdName) {
 		case "t":
 		case "test":
-			var musicModule = this.modules.get("Music");
-			console.log(musicModule.thisPath)
-
-			//console.log(musicModule.musicController.player.scanDeps());
+			console.log(Object.values(Events));
 			break;
 		case "pl":
 			console.log(`Lista de plugins:`);

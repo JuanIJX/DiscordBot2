@@ -16,8 +16,8 @@ export default class Music extends Module {
 		this.musicController = new MusicController(this);
 		await this.musicController.load();
 
-		this.registerCommand("!Pu", funcMusic);
-		this.registerCommand("!pu", funcMusic);
+		this.registerCommand("!Po", funcMusic);
+		this.registerCommand("!po", funcMusic);
 
 		await this.registerSlash(slashMusicPlaylist);
 	}

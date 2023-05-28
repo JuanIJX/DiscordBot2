@@ -43,25 +43,16 @@ export default class Module {
 		};
 	}
 
-	async _load(logger, discordManager, commandManager, slashManager) {
+	async _load(main) {
 		if(this._loaded === true)
 			return;
-		if(!(logger instanceof Logger))
-			throw new Error(`Falta el elemento Logger en el plugin ${this.name}`);
-		if(!(discordManager instanceof DiscordManager))
-			throw new Error(`Falta el elemento Discord en el plugin ${this.name}`);
-		if(!(commandManager instanceof CommandManager))
-			throw new Error(`Falta el elemento CommandManager en el plugin ${this.name}`);
-		if(!(slashManager instanceof SlashManager))
-			throw new Error(`Falta el elemento CommandManager en el plugin ${this.name}`);
-
-		Object.defineProperty(this, '_logger', { value: logger });
 		Object.defineProperty(this, '_loaded', { value: true });
-		Object.defineProperty(this, '_commandManager', { value: commandManager });
-		Object.defineProperty(this, '_slashManager', { value: slashManager });
-		Object.defineProperty(this, 'discordManager', { value: discordManager, enumerable: true });
+		Object.defineProperty(this, '_logger', { value: main.logger });
+		Object.defineProperty(this, '_commandManager', { value: main.commandManager });
+		Object.defineProperty(this, '_slashManager', { value: main.slashManager });
+		Object.defineProperty(this, '_eventManager', { value: main.eventManager, enumerable: true });
+		Object.defineProperty(this, 'discordManager', { value: main.discordManager, enumerable: true });
 		Object.defineProperty(this, 'configManager', { value: new ConfigManager(this._path), enumerable: true });
-		Object.defineProperty(this, 'eventManager', { value: new EventManager(), enumerable: true });
 
 		await this.onLoad();
 	}
@@ -70,6 +61,7 @@ export default class Module {
 		if(!this._started) {
 			this._commandManager.enableModule(this.name);
 			this._slashManager.enableModule(this.name);
+			this._eventManager.enableModule(this.name);
 			await this.onEnable();
 			this.log(Level.INFO, `Plugin '${this.name}' iniciado`);
 			this._started = true;
@@ -79,6 +71,7 @@ export default class Module {
 		if(this._started) {
 			this._commandManager.disableModule(this.name);
 			this._slashManager.disableModule(this.name);
+			this._eventManager.disableModule(this.name);
 			await this.onDisable();
 			this.log(Level.INFO, `Plugin '${this.name}' detenido`);
 			this._started = false;
@@ -118,5 +111,10 @@ export default class Module {
 		if(!data.hasOwnProperty("execute"))
 			throw new Error("Falta la propiedad execute");
 		await this._slashManager.addCommand(this, data.slash, data.execute);
+	}
+
+	// Events
+	registerEvent(eventName, action) {
+		this._eventManager.register(this, eventName, action);
 	}
 }

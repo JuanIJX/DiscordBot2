@@ -302,11 +302,7 @@ export default class PlaylistManager {
 		FOREIGN KEY (id_playlist) REFERENCES ${this._tableName_playlists}(id) ON DELETE CASCADE
 	);`;
 
-	constructor(player, pluginPath) {
-		/*if(!(player instanceof Player))
-			throw new Error("Falta el objeto de tipo Player");*/
-
-		//Object.defineProperty(this, "player", { value: player, enumerable: true });
+	constructor(pluginPath) {
 		Object.defineProperty(this, "_pluginPath", { value: pluginPath });
 	}
 

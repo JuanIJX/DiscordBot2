@@ -89,11 +89,9 @@ export default class Main {
 		await this.discordManager.start();
 		if(this._config.clearCmds)
 			await this.discordManager.clearCommands();
-
 		await this.slashManager.load(this.discordManager.discord.application.commands);
 		await this._loadModules();
 		await this._startModules();
-		this.eventManager.load(this.modules);
 
 		this.log(Level.INFO, "Done!");
 		//this.log(Level.INFO, "Pero me paro!"); await wait(200); this.stop();
@@ -190,11 +188,18 @@ export default class Main {
 
 
 /**
+	Listado de librerías esenciales para el funcionamiento
+
+	"@discordjs/opus": "^0.9.0",
 	"@discordjs/voice": "^0.16.0",
     "bufferutil": "^4.0.7",
+	"dotenv": "^16.0.3",
     "discord.js": "^14.9.0",
     "erlpack": "^0.1.4",
     "fs": "^0.0.1-security",
+	"sodium-native": "^4.0.1",
+	"sqlite3": "^5.1.6",
+    "sqlstring": "^2.3.3",
     "stack-trace": "^1.0.0-pre2",
     "utf-8-validate": "^6.0.3",
     "yaml": "^2.2.1",

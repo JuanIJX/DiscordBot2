@@ -91,17 +91,7 @@ export default class Module {
 
 	// Commands
 	registerCommand(name, action) {
-		try {
-			this._commandManager.addCommand(name, this, action);
-		} catch (error) {
-			this.log(Level.ERROR, error.message);
-		}
-	}
-	registerCommands(commands) {
-		if(typeof(commands)!="object")
-			throw new Error("Se esperaba un objeto como parámetro");
-		for (const [key, value] of Object.entries(commands))
-			this.registerCommand(key, value);
+		this._commandManager.addCommand(name, this, action);
 	}
 
 	// Slash commands

@@ -79,10 +79,7 @@ export default class Module {
 	}
 
 	getEmbed(objs, ephemeral=false) {
-		const embed = { embeds: (Array.isArray(objs) ? objs : [objs]).map(obj => obj.assign(this._defaultEmbed)) };
-		if(ephemeral)
-			embed.ephemeral = true;
-		return embed;
+		return { embeds: (Array.isArray(objs) ? objs : [objs]).map(obj => obj.assign(this._defaultEmbed)), ephemeral }
 	}
 
 	async onLoad() {}

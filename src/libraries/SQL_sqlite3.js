@@ -38,9 +38,10 @@ export default class Sqlite {
 
 	async close() {
 		if(this._connected) {
+			const thisobj = this;
 			return new Promise((resolve, reject) => this.idbd.close(function(err) {
 				if(err) return reject(err);
-				this._connected = false;
+				thisobj._connected = false;
 				resolve();
 			}));
 		}

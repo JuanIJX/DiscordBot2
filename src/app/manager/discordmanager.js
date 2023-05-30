@@ -59,10 +59,15 @@ export default class DiscordManager {
 	get name() { return this.constructor.name; }
 	get started() { return this._started === true; }
 
+	async _waitReady() {
+		return new Promise(resolve => this.discord.once('ready', resolve));
+	}
+
 	async start() {
 		if(this._started === null) {
 			this.log(Level.DEBUG, "Bot iniciando...");
 			await this.discord.login(this._token);
+			await this._waitReady();
 			this._started = true;
 			this.log(Level.DEBUG, "Bot de discord conectado");
 		}

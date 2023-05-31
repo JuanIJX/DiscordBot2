@@ -2,6 +2,7 @@ import { getVoiceConnection } from "@discordjs/voice";
 import { Client, Guild, Message } from "discord.js"
 import { Level } from "../../libraries/logger.js";
 import intents from "../settings/intents.js"
+import partials from "../settings/partials.js"
 import { wait } from "../../libraries/utils.mjs";
 
 Guild.prototype.fetchChannelOrNull = async function(channelID) {
@@ -46,7 +47,7 @@ export default class DiscordManager {
 		Object.defineProperty(this, '_logger', { value: logger });
 		Object.defineProperty(this, '_token', { value: token });
 		Object.defineProperty(this, '_started', { value: null, writable: true });
-		Object.defineProperty(this, 'discord', { value: new Client({ intents, disableMentions: 'everyone' }), enumerable: true });
+		Object.defineProperty(this, 'discord', { value: new Client({ intents, partials, disableMentions: 'everyone' }), enumerable: true });
 
 		// Settings
 		this.discord.on("error", error => {

@@ -64,10 +64,12 @@ Object.defineProperties(Array.prototype, {
 });
 
 // Object
-Object.prototype.clone = function() { return JSON.parse(JSON.stringify(this)); };
 Object.defineProperties(Object.prototype, {
 	"getKeyByValue": { value: function(value) {
 		return Object.keys(this).find(key => this[key] === value);
+	}, configurable: true, writable: true },
+	"clone": { value: function() {
+		return JSON.parse(JSON.stringify(this));
 	}, configurable: true, writable: true },
 	"assign": { value: function(obj) {
 		for (const key in obj) {

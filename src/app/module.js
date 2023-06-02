@@ -1,15 +1,13 @@
 import url from "url"
 import path from "path"
 import { get as stackTraceGet } from "stack-trace"
-import Logger, { Level } from "../libraries/logger.js";
+import { Level } from "../libraries/logger.js";
 import ConfigManager from "./manager/configmanager.js"
-import CommandManager from "./manager/commandmanager.js"
-import SlashManager from "./manager/slashcommandmanager.js"
-import EventManager from "./manager/eventmanager.js"
-import DiscordManager from "./manager/discordmanager.js";
 export default class Module {
-	constructor() {
+	constructor(main) {
 		// Variables
+		Object.defineProperty(this, "_main", { value: main });
+		Object.defineProperty(this, '_logger', { value: this._main.logger });
 		Object.defineProperty(this, "_path", { value: path.relative(
 			process.cwd(),
 			url.fileURLToPath(
@@ -43,15 +41,14 @@ export default class Module {
 		};
 	}
 
-	async _load(main) {
+	async _load() {
 		if(this._loaded === true)
 			return;
 		Object.defineProperty(this, '_loaded', { value: true });
-		Object.defineProperty(this, '_logger', { value: main.logger });
-		Object.defineProperty(this, '_commandManager', { value: main.commandManager });
-		Object.defineProperty(this, '_slashManager', { value: main.slashManager });
-		Object.defineProperty(this, '_eventManager', { value: main.eventManager, enumerable: true });
-		Object.defineProperty(this, 'discordManager', { value: main.discordManager, enumerable: true });
+		Object.defineProperty(this, '_commandManager', { value: this._main.commandManager });
+		Object.defineProperty(this, '_slashManager', { value: this._main.slashManager });
+		Object.defineProperty(this, '_eventManager', { value: this._main.eventManager, enumerable: true });
+		Object.defineProperty(this, 'discordManager', { value: this._main.discordManager, enumerable: true });
 		Object.defineProperty(this, 'configManager', { value: new ConfigManager(this._path), enumerable: true });
 
 		await this.onLoad();
@@ -78,10 +75,6 @@ export default class Module {
 		}
 	}
 
-	getEmbed(objs, ephemeral=false) {
-		return { embeds: (Array.isArray(objs) ? objs : [objs]).map(obj => obj.assign(this._defaultEmbed)), ephemeral }
-	}
-
 	async onLoad() {}
 	async onEnable() {}
 	async onDisable() {}
@@ -103,5 +96,15 @@ export default class Module {
 	// Events
 	registerEvent(eventName, action) {
 		this._eventManager.register(this, eventName, action);
+	}
+
+
+	// Funciones
+	getEmbed(objs, ephemeral=false) {
+		return { embeds: (Array.isArray(objs) ? objs : [objs]).map(obj => obj.assign(this._defaultEmbed)), ephemeral }
+	}
+
+	isAdmin(id) {
+		return this._main._admins.includes(id);
 	}
 }

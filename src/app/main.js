@@ -48,6 +48,7 @@ export default class Main {
 
 	constructor() {
 		// ** INIT VARS **
+		Object.defineProperty(this, '_admins', { value: ["171058039065935872"] });
 		Object.defineProperty(this, '_configMain', { value: new Config(path.join(systemPaths.basePath, systemPaths.configPath, "main.yml"), { token: "" }) });
 		Object.defineProperty(this, '_configPlugins', { value: new Config(path.join(systemPaths.basePath, systemPaths.configPath, "plugins.yml")) });
 		Object.defineProperty(this, '_config', { value: {...defaultConfig} });
@@ -153,12 +154,12 @@ export default class Main {
 					continue;
 				if(this.modules.has(classModuleName)) // Si ya hay un plugin con el mismo nombre
 					continue;
-				const instanciedModule = new ClassModule();
+				const instanciedModule = new ClassModule(this);
 				if(!(instanciedModule instanceof Module)) // Si no extiende la clase Module
 					continue;
 
 				// Cargado con éxito
-				await instanciedModule._load(this);
+				await instanciedModule._load();
 				this.modules.set(classModuleName, instanciedModule);
 				this._logger.log(Level.DEBUG, this.name, `Plugin '${classModuleName}' cargado`);
 			} catch (error) {

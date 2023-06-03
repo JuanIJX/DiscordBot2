@@ -9,6 +9,8 @@ export default class Autocanales extends Module {
 		this.registerEvent(Events.VoiceStateUpdate, this.gestorCanales.voiceStateUpdate.bind(this.gestorCanales));
 		this.registerEvent(Events.MessageReactionAdd, this.gestorCanales.messageReactionAdd.bind(this.gestorCanales));
 		this.registerEvent(Events.ChannelDelete, this.gestorCanales.channelDelete.bind(this.gestorCanales));
+		// Add change name channel event
+		// Add user leave guild event (por si se va el dueño de algun canal)
 		await this.registerSlash(slashCmd);
 	}
 	async onEnable() {

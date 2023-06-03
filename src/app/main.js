@@ -17,6 +17,7 @@ import KeyB from "../libraries/KeyB.js"
 import defaultConfig from "./settings/defaultconfig.js";
 import systemPaths from "./settings/dynamicpaths.js";
 import commands from "../commands.js";
+import inload from "../inload.js";
 
 import Module from "./module.js";
 import Config from "../libraries/config.js";
@@ -86,13 +87,13 @@ export default class Main {
 
 	async asyncInit() {
 		//  ** SLOW SETTINGS **
-
 		await this.discordManager.start();
 		if(this._config.clearCmds)
 			await this.discordManager.clearCommands();
 		await this.slashManager.load(this.discordManager.discord.application.commands);
 		await this._loadModules();
 		await this._startModules();
+		await inload.bind(this)();
 
 		this.log(Level.INFO, "Done!");
 		//this.log(Level.INFO, "Pero me paro!"); await wait(200); this.stop();

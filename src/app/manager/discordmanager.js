@@ -57,6 +57,7 @@ export default class DiscordManager {
 	}
 
 	log(level, msg) { this._logger.log(level, "D-BOT", msg); }
+	get id() { return this.discord.user.id; }
 	get name() { return this.constructor.name; }
 	get started() { return this._started === true; }
 

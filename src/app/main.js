@@ -107,6 +107,7 @@ export default class Main {
 	get commandManager() { return this._commandManager; }
 	get slashManager() { return this._slashManager; }
 	get eventManager() { return this._eventManager; }
+	get inviteLink() { return `https://discord.com/api/oauth2/authorize?client_id=${this.discordManager.id}&permissions=8&scope=bot%20applications.commands`; }
 
 	async stop() {
 		await KeyB.stop();

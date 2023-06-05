@@ -17,25 +17,6 @@ export default async function() {
 
 		//console.log(aux_3.toJSON());
 
-		
-		//var p = await channel.permissionOverwrites.edit("342323287436558338", { ViewChannel: false }).then(() => true).catch(() => false);
-		/*var p = await channel.permissionOverwrites.set([
-			{
-				id: guild.id,
-				deny: [PermissionFlagsBits.ViewChannel],
-			},
-			{
-				id: "318082563023568896",
-				allow: [
-					PermissionFlagsBits.ViewChannel,
-					PermissionFlagsBits.Administrator,
-					PermissionFlagsBits.ManageChannels,
-				],
-			},
-		]).then(() => true);*/
-
-		console.log(await guild.members.fetch("171058039065935872").then(() => true).catch(() => false))
-
 		//console.log(p);
 	} catch (error) {
 		console.log("ERROR DE IN LOAD");

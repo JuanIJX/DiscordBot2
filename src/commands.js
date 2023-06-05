@@ -63,6 +63,9 @@ export default async function(cadena, cmdName, args) {
 					await aux_1.stop();
 			}
 			break;
+		case "enlace":
+			console.log(this.inviteLink);
+			break;
 		default:
 			console.log(`Comando desconocido '${cmdName}'`);
 			break;

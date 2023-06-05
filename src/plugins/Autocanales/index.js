@@ -11,6 +11,7 @@ export default class Autocanales extends Module {
 		this.registerEvent(Events.ChannelDelete, this.gestorCanales.channelDelete.bind(this.gestorCanales));
 		// Add change name channel event
 		// Add user leave guild event (por si se va el dueño de algun canal)
+		// Add guild leave event
 		await this.registerSlash(slashCmd);
 	}
 	async onEnable() {

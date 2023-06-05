@@ -62,16 +62,20 @@ export default class DiscordManager {
 	get started() { return this._started === true; }
 
 	async _waitReady() {
-		return new Promise(resolve => this.discord.once('ready', resolve));
+		return new Promise(resolve => {this.discord.once('ready', () => {
+			this.log(Level.DEBUG, "Ready!");
+			resolve();
+		})});
 	}
 
 	async start() {
 		if(this._started === null) {
-			this.log(Level.DEBUG, "Bot iniciando...");
+			this.log(Level.DEBUG, "Iniciando...");
 			await this.discord.login(this._token);
+			this.log(Level.DEBUG, "Logueado");
 			await this._waitReady();
 			this._started = true;
-			this.log(Level.DEBUG, "Bot de discord conectado");
+			this.log(Level.INFO, "Bot de discord conectado");
 		}
 	}
 
@@ -82,7 +86,7 @@ export default class DiscordManager {
 				const voiceConnection = getVoiceConnection(guild.id);
 				if(voiceConnection) {
 					voiceConnection.destroy(true);
-					this.log(Level.DEBUG, `VoiceConnection ${guild.id} destruído`);
+					this.log(Level.DEBUG, `VoiceConnection g(${guild.id}) destruído`);
 				}
 			});
 			await wait(200);

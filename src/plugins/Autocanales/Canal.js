@@ -616,13 +616,7 @@ export default class GestorCanales {
 	}
 
 
-	// Eventos
-	messageReactionAdd(messageReaction, user) {
-		this._messageReactionAdd(messageReaction, user);
-	}
-	channelDelete(channel) {
-		this._channelDelete(channel);
-	}
+	// Get events
 	voiceStateUpdate(oldState, newState) {
 		if(oldState.channel === null)
 			this._joinEvent(newState.channel, newState.member);
@@ -631,6 +625,50 @@ export default class GestorCanales {
 		else if(oldState.channel != newState.channel) {
 			this._leaveEvent(oldState.channel, oldState.member);
 			this._joinEvent(newState.channel, newState.member);
+		}
+	}
+	messageReactionAdd(messageReaction, user) {
+		this._messageReactionAdd(messageReaction, user);
+	}
+	channelDelete(channel) {
+		this._channelDelete(channel);
+	}
+	channelUpdate(channelOld, channelNew) {
+		if(channelOld.name != channelNew.name)
+			this._channelChangeName(channelNew);
+	}
+	guildMemberRemove(member) {
+
+	}
+	guildDelete(guild) {
+
+	}
+
+
+	// Private events
+	async _joinEvent(channel, member) {
+		if(this.list.has(channel.guild.id)) {
+			const guildCanal = this.list.get(channel.guild.id);
+			if(guildCanal.voice.id === channel.id) {
+				try {
+					var canal = guildCanal.list.find(c => c.owner.id == member.user.id);
+					if(!canal)
+						canal = await guildCanal.createCanal(member);
+					try {
+						await member.voice.setChannel(canal?.channel);
+					} catch (error) {
+						await member.voice.setChannel(null);
+					}
+				} catch (error) { this.error(error); }
+			}
+		}
+	}
+
+	async _leaveEvent(channel) {
+		if(this.list.has(channel.guild.id)) {
+			const guildCanal = this.list.get(channel.guild.id);
+			if(guildCanal.list.has(channel.id))
+				await guildCanal.list.get(channel.id).shouldbeDeleted();
 		}
 	}
 
@@ -680,26 +718,25 @@ export default class GestorCanales {
 		}
 	}
 
-	async _joinEvent(channel, member) {
-		if(this.list.has(channel.guild.id)) {
-			const guildCanal = this.list.get(channel.guild.id);
-			if(guildCanal.voice.id === channel.id) {
-				try {
-					var canal = guildCanal.list.find(c => c.owner.id == member.user.id);
-					if(!canal)
-						canal = await guildCanal.createCanal(member);
-					await member.voice.setChannel(canal?.channel);
-				} catch (error) { this.error(error); }
-			}
-		}
-	}
-
-	async _leaveEvent(channel) {
+	async _channelChangeName(channel) {
 		if(this.list.has(channel.guild.id)) {
 			const guildCanal = this.list.get(channel.guild.id);
 			if(guildCanal.list.has(channel.id))
-				await guildCanal.list.get(channel.id).shouldbeDeleted();
+				await guildCanal.list.get(channel.id).setName(channel.name, false);
 		}
+	}
+
+	async guildMemberRemove(member) {
+		if(this.list.has(member.guild.id))
+			await this.list
+				.get(member.guild.id).list
+				.filter(canal => canal.owner.id == member.id)
+				.forEachAsync(async canal => await canal.delete());
+	}
+
+	async guildDelete(guild) {
+		if(this.list.has(guild.id))
+			await this.list.get(guild.id).delete(false);
 	}
 }
 
@@ -916,19 +953,21 @@ class GuildCanal {
 	 * 
 	 * @returns true en caso de que sea correcta la eliminación
 	 */
-	async delete() {
+	async delete(guildExists = true) {
 		const channels = this.list.map(canal => canal.channel);
 		if(! await this.disconnect()) return false;
 		this.debug(`Eliminado el guild(${this.id})`);
 
-		for (const channel of channels)
-			await channel.delete();
-		if(this.category != null && await this.guild.channels.fetch(this.category.id).then(() => true).catch(() => false))
-			await this.guild.channels.delete(this.category);
-		if(this.text != null && await this.guild.channels.fetch(this.text.id).then(() => true).catch(() => false))
-			await this.guild.channels.delete(this.text);
-		if(this.voice != null && await this.guild.channels.fetch(this.voice.id).then(() => true).catch(() => false))
-			await this.guild.channels.delete(this.voice);
+		if(guildExists) {
+			for (const channel of channels)
+				await channel.delete();
+			if(this.category != null && await this.guild.channels.fetch(this.category.id).then(() => true).catch(() => false))
+				await this.guild.channels.delete(this.category);
+			if(this.text != null && await this.guild.channels.fetch(this.text.id).then(() => true).catch(() => false))
+				await this.guild.channels.delete(this.text);
+			if(this.voice != null && await this.guild.channels.fetch(this.voice.id).then(() => true).catch(() => false))
+				await this.guild.channels.delete(this.voice);
+		}
 		return true;
 	}
 
@@ -1078,12 +1117,14 @@ class Canal {
 		this._temp = data;
 		this.shouldbeDeleted();
 	}
-	async setName(data) {
+	async setName(data, editChannel = true) {
 		if(typeof data != "string")
 			throw new Error(`Se debe proporcionar una cadena`);
+		if(data == this._name)
+			return;
 		await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET name = ? WHERE channel = ?`, data, this.id);
 		this._name = data;
-		// Cambiarlo del canal
+		if(editChannel) await this.channel.edit({ name: this._name });
 	}
 	async setOwner(data) {
 		if(await this.guild.members.fetch(data).then(() => false).catch(() => true))

@@ -22,6 +22,11 @@ export default {
 		.addSubcommand(subcommand => subcommand
 			.setName('create')
 			.setDescription('Crea un canal')
+
+			.addUserOption(option => option
+				.setName('owner')
+				.setDescription('Owner del canal')
+			)
 		)
 
 		.addSubcommand(subcommand => subcommand
@@ -36,6 +41,17 @@ export default {
 			.addSubcommand(subcommand => subcommand
 				.setName('temp')
 				.setDescription('Cambia de temporal a permanente y viceversa')
+			)
+
+			.addSubcommand(subcommand => subcommand
+				.setName('setowner')
+				.setDescription('Cambia un canal de dueño')
+
+				.addUserOption(option => option
+					.setName('owner')
+					.setDescription('Nuevo owner')
+					.setRequired(true)
+				)
 			)
 
 			.addSubcommand(subcommand => subcommand
@@ -182,7 +198,7 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 				return `Ya hay creado`;
 
 			await this.gestorCanales.create(guild);
-			return `Canales creados!`;
+			return `Habilitado el Autocanales en este servidor`;
 		case "delete":
 			await interaction.deferReply({ ephemeral: true });
 			if (guild.ownerId != user.id && !this.isAdmin(user.id))
@@ -194,12 +210,16 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 			return `Error al eliminar, autocanales desconectado de este servidor`;
 		case "create":
 			await interaction.deferReply({ ephemeral: true });
+			if (guild.ownerId != user.id && !this.isAdmin(user.id))
+				return `No tienes permisos`;
 			if(guildCanal == null)
 				return `El servidor no tiene asignado ningún Autocanal`;
-			if(guildCanal.getCountCanales(user.id) > 0)
-				return `Ya tienes un canal creado`;
-			await (await guildCanal.createCanal(member)).setTemp(false);
-			return `Canal creado`;
+			/*if(guildCanal.getCountCanales(user.id) > 0)
+				return `Ya tienes un canal creado`;*/
+
+			aux_1 = ops.getUser("owner") == null ? member : await guild.members.fetch(ops.getUser("owner")).catch(() => null);
+			await (await guildCanal.createCanal(aux_1)).setTemp(false);
+			return `Canal de ${aux_1.displayName} creado`;
 		case "my":
 			if(guildCanal == null)
 				return `El servidor no tiene asignado ningún Autocanal`;
@@ -220,6 +240,16 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 					if(canal.temp && canal.count == 0)
 						return;
 					return `Cambiado a ${canal.temp ? `temporal` : `permanente`}`;
+
+				case "setowner":
+					await interaction.deferReply({ ephemeral: true });
+					if (
+						guild.ownerId != user.id &&
+						!this.isAdmin(user.id)
+					) return `No tienes permisos`;
+
+					await canal.setOwner(ops.getUser("owner"));
+					return `Cierre: ${canal.type}`;
 
 				case "lock":
 					await interaction.deferReply({ ephemeral: true });

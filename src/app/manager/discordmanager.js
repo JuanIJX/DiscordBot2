@@ -1,5 +1,5 @@
 import { getVoiceConnection } from "@discordjs/voice";
-import { Client, Guild, Message } from "discord.js"
+import { Client, Events, Guild, Message } from "discord.js"
 import { Level } from "../../libraries/logger.js";
 import intents from "../settings/intents.js"
 import partials from "../settings/partials.js"
@@ -76,6 +76,9 @@ export default class DiscordManager {
 			await this._waitReady();
 			this._started = true;
 			this.log(Level.INFO, "Bot de discord conectado");
+
+			this.discord.on(Events.GuildCreate, guild => this.log(Level.INFO, `Entre en el servidor '${guild.name}' g(${guild.id})`));
+			this.discord.on(Events.GuildDelete, guild => this.log(Level.INFO, `Salí del servidor '${guild.name}' g(${guild.id})`));
 		}
 	}
 

@@ -1,7 +1,6 @@
-import { ChannelType, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
+import { SlashCommandBuilder } from "discord.js";
 import { Level } from "../../../libraries/logger.js";
-import { Type } from "../Canal.js";
-import { wait } from "../../../libraries/utils.mjs";
+import GestorCanales, { Type } from "../Canal.js";
 
 export default {
 	slash: new SlashCommandBuilder()
@@ -15,8 +14,13 @@ export default {
 		)
 
 		.addSubcommand(subcommand => subcommand
-			.setName('regen')
+			.setName('enable')
 			.setDescription('Activa el Autocanales en este servidor')
+		)
+
+		.addSubcommand(subcommand => subcommand
+			.setName('disable')
+			.setDescription('Elimina el Autocanales de este servidor')
 		)
 
 		.addSubcommand(subcommand => subcommand
@@ -27,11 +31,6 @@ export default {
 				.setName('owner')
 				.setDescription('Owner del canal')
 			)
-		)
-
-		.addSubcommand(subcommand => subcommand
-			.setName('delete')
-			.setDescription('Elimina el Autocanales de este servidor')
 		)
 
 		.addSubcommandGroup(group => group
@@ -184,30 +183,39 @@ export default {
 
 async function _execute(interaction, user, member, channel, guild, ops, guildCanal) {
 	const cmdName = ops.getSubcommandGroup() ?? ops.getSubcommand(false);
-	let aux_1, aux_2;
+	const hist = (function(msg) {
+		this.log(Level.HIST, msg)
+	}).bind(this)
+	let aux_1, aux_2, aux_3;
 
 	switch (cmdName) {
 		case "test":
+			await interaction.deferReply({ ephemeral: true });
 			if(!this.isAdmin(user.id)) return `Acceso denegado`;
+			hist("testeooo");
+
 			return `test`;
-		case "regen":
+		case "enable":
 			await interaction.deferReply({ ephemeral: true });
 			if (guild.ownerId != user.id && !this.isAdmin(user.id))
 				return `No tienes permisos`;
 			if(guildCanal != null)
-				return `Ya hay creado`;
+				return `Ya está habilitado en este servidor`;
 
 			await this.gestorCanales.create(guild);
+			hist(`g(${guild.id}) habilitado por ${member.user.tag}(${member.id})`);
 			return `Habilitado el Autocanales en este servidor`;
-		case "delete":
+		case "disable":
 			await interaction.deferReply({ ephemeral: true });
 			if (guild.ownerId != user.id && !this.isAdmin(user.id))
 				return `No tienes permisos`;
 			if(guildCanal == null)
 				return `El servidor no tiene asignado ningún Autocanal`;
-			if(await guildCanal.delete())
-				return (guildCanal.text != channel.id && guildCanal.voice != channel.id) ? `Canales eliminados` : undefined;
-			return `Error al eliminar, autocanales desconectado de este servidor`;
+			if(! await guildCanal.delete())
+				return `Error al eliminar, autocanales desconectado de este servidor`;
+
+			hist(`g(${guild.id}) deshabilitado por ${member.user.tag}(${member.id})`);
+			return (guildCanal.text != channel.id && guildCanal.voice != channel.id) ? `Canales eliminados` : undefined;
 		case "create":
 			await interaction.deferReply({ ephemeral: true });
 			if (guild.ownerId != user.id && !this.isAdmin(user.id))
@@ -218,7 +226,9 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 				return `Ya tienes un canal creado`;*/
 
 			aux_1 = ops.getUser("owner") == null ? member : await guild.members.fetch(ops.getUser("owner")).catch(() => null);
-			await (await guildCanal.createCanal(aux_1)).setTemp(false);
+			aux_2 = await guildCanal.createCanal(aux_1);
+			await aux_2.setTemp(false);
+			hist(`g(${guild.id}) c(${aux_2.id}) canal creado por ${member.user.tag}(${member.id}) para ${aux_1.user.tag}(${aux_1.id})`);
 			return `Canal de ${aux_1.displayName} creado`;
 		case "my":
 			if(guildCanal == null)
@@ -239,6 +249,8 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 					await canal.setTemp(!canal.temp);
 					if(canal.temp && canal.count == 0)
 						return;
+
+					hist(`g(${guild.id}) c(${canal.id}) cambiado a ${canal.temp ? `temporal` : `permanente`} por ${member.user.tag}(${member.id})`);
 					return `Cambiado a ${canal.temp ? `temporal` : `permanente`}`;
 
 				case "setowner":
@@ -249,7 +261,8 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 					) return `No tienes permisos`;
 
 					await canal.setOwner(ops.getUser("owner"));
-					return `Cierre: ${canal.type}`;
+					hist(`g(${guild.id}) c(${canal.id}) cambiado de owner por ${member.user.tag}(${member.id}) a ${ops.getUser("owner").tag}`);
+					return `Nuevo owner: ${ops.getUser("owner").tag}`;
 
 				case "lock":
 					await interaction.deferReply({ ephemeral: true });
@@ -265,7 +278,8 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 					) return `No tienes permisos`;
 
 					await canal.setType(ops.getInteger("type"));
-					return `Cierre: ${canal.type}`;
+					hist(`g(${guild.id}) c(${canal.id}) cambiado a tipo ${canal.type} por ${member.user.tag}(${member.id})`);
+					return `Cierre: ${canal.type} ${GestorCanales._emojis[canal.type]}`;
 
 				case "inv":
 					await interaction.deferReply({ ephemeral: true });
@@ -276,6 +290,7 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 					) return `No tienes permisos`;
 
 					await canal.setVisible(!canal.visible);
+					hist(`g(${guild.id}) c(${canal.id}) cambiado a tipo ${canal.visible ? "visible" : "oculto"} por ${member.user.tag}(${member.id})`);
 					return `Visibilidad: ${canal.visible ? "visible" : "oculto"}`;
 
 				case "info":
@@ -315,6 +330,7 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 					) return `No tienes permisos`;
 
 					await canal.delete();
+					hist(`g(${guild.id}) c(${canal.id}) eliminado por ${member.user.tag}(${member.id})`);
 					return;
 
 				case "mod":
@@ -365,14 +381,16 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 							// Procesamiento si solo hay una ID
 							if(aux_2.length == 1) {
 								await canal.addMod(aux_2[0]);
+								hist(`g(${guild.id}) c(${canal.id}) añadido [${aux_2[0].tag}] a moderador por ${member.user.tag}(${member.id})`);
 								return `${aux_2[0].tag} añadido a moderador`;
 							}
 
 							// Procesamiento si hay varias IDs
 							await canal.setMods(aux_2.map(e => e.id));
+							hist(`g(${guild.id}) c(${canal.id}) añadidos [${aux_2.map(u => u.id).join(", ")}] a moderador por ${member.user.tag}(${member.id})`);
 							return [
 								`**Añadidos ${aux_2.length} moderadores**`,
-								...aux_2.map(e => `🠺 ${e.tag}`)
+								...aux_2.map(u => `🠺 ${u.tag}`)
 							].join("\n");
 						case 1: // Del
 							await interaction.deferReply({ ephemeral: true });
@@ -405,6 +423,7 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 							// Procesamiento si solo hay una ID
 							if(aux_1.length == 1) {
 								await canal.delMod(aux_1[0]);
+								hist(`g(${guild.id}) c(${canal.id}) eliminado [${aux_1[0].tag}] de moderadores por ${member.user.tag}(${member.id})`);
 								return await guild.members.fetch(aux_1[0])
 									.then(m => `🠺 ${m.user.tag} eliminado de la lista de mods`)
 									.catch(async () => await guild.client.users.fetch(aux_1[0])
@@ -415,6 +434,7 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 
 							// Procesamiento si hay varias IDs
 							await canal.setMods([...canal.mods].filter(e => !aux_2.includes(e)));
+							hist(`g(${guild.id}) c(${canal.id}) eliminados [${aux_1.join(", ")}] de moderadores por ${member.user.tag}(${member.id})`);
 							return [
 								`**Eliminados ${aux_1.length} moderadores**`,
 								...await aux_1.mapAsync(async id => await guild.members.fetch(id)
@@ -425,7 +445,6 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 									)
 								)
 							].join("\n");
-							return;
 						case 2: // Clear
 							await interaction.deferReply({ ephemeral: true });
 							// Comprobación de error, sin permisos
@@ -438,6 +457,7 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 							// Procesamiento
 							aux_1 = [...canal.mods];
 							await canal.setMods([]);
+							hist(`g(${guild.id}) c(${canal.id}) moderadores vaciados por ${member.user.tag}(${member.id})`);
 							return [
 								`**Eliminados ${aux_1.length} moderadores**`,
 								...await aux_1.mapAsync(async id => await guild.members.fetch(id)
@@ -511,14 +531,16 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 							// Procesamiento si solo hay una ID
 							if(aux_2.length == 1) {
 								await canal.addMember(aux_2[0]);
+								hist(`g(${guild.id}) c(${canal.id}) añadido [${aux_2[0].tag}] a miembro por ${member.user.tag}(${member.id})`);
 								return `${aux_2[0].tag} añadido a miembro`;
 							}
 
 							// Procesamiento si hay varias IDs
 							await canal.setMembers(aux_2.map(e => e.id));
+							hist(`g(${guild.id}) c(${canal.id}) añadidos [${aux_2.map(u => u.id).join(", ")}] a miembro por ${member.user.tag}(${member.id})`);
 							return [
 								`**Añadidos ${aux_2.length} miembros**`,
-								...aux_2.map(e => `🠺 ${e.tag}`)
+								...aux_2.map(u => `🠺 ${u.tag}`)
 							].join("\n");
 						case 1: // Del
 							await interaction.deferReply({ ephemeral: true });
@@ -552,6 +574,7 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 							// Procesamiento si solo hay una ID
 							if(aux_1.length == 1) {
 								await canal.delMember(aux_1[0]);
+								hist(`g(${guild.id}) c(${canal.id}) eliminado [${aux_1[0].tag}] de miembros por ${member.user.tag}(${member.id})`);
 								return await guild.members.fetch(aux_1[0])
 									.then(m => `🠺 ${m.user.tag} eliminado de la lista de miembros`)
 									.catch(async () => await guild.client.users.fetch(aux_1[0])
@@ -562,6 +585,7 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 
 							// Procesamiento si hay varias IDs
 							await canal.setMembers([...canal.members].filter(e => !aux_2.includes(e)));
+							hist(`g(${guild.id}) c(${canal.id}) eliminados [${aux_1.join(", ")}] de moderadores por ${member.user.tag}(${member.id})`);
 							return [
 								`**Eliminados ${aux_1.length} miembros**`,
 								...await aux_1.mapAsync(async id => await guild.members.fetch(id)
@@ -583,6 +607,7 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 
 							// Procesamiento
 							aux_1 = [...canal.members];
+							hist(`g(${guild.id}) c(${canal.id}) miembros vaciados por ${member.user.tag}(${member.id})`);
 							await canal.setMembers([]);
 							return [
 								`**Eliminados ${aux_1.length} miembros**`,
@@ -658,14 +683,16 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 							// Procesamiento si solo hay una ID
 							if(aux_2.length == 1) {
 								await canal.addBanned(aux_2[0]);
+								hist(`g(${guild.id}) c(${canal.id}) usuario [${aux_2[0].tag}] baneado por ${member.user.tag}(${member.id})`);
 								return `${aux_2[0].tag} baneado`;
 							}
 
 							// Procesamiento si hay varias IDs
 							await canal.setBanneds(aux_2.map(e => e.id));
+							hist(`g(${guild.id}) c(${canal.id}) usuarios [${aux_2.map(u => u.id).join(", ")}] baneados por ${member.user.tag}(${member.id})`);
 							return [
 								`**Usuarios baneados: ${aux_2.length}**`,
-								...aux_2.map(e => `🠺 ${e.tag}`)
+								...aux_2.map(u => `🠺 ${u.tag}`)
 							].join("\n");
 						case 1: // Del
 							await interaction.deferReply({ ephemeral: true });
@@ -699,6 +726,7 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 							// Procesamiento si solo hay una ID
 							if(aux_1.length == 1) {
 								await canal.delBanned(aux_1[0]);
+								hist(`g(${guild.id}) c(${canal.id}) usuario [${aux_1[0].tag}] desbaneado por ${member.user.tag}(${member.id})`);
 								return await guild.members.fetch(aux_1[0])
 									.then(m => `🠺 ${m.user.tag} desbaneado`)
 									.catch(async () => await guild.client.users.fetch(aux_1[0])
@@ -709,6 +737,7 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 
 							// Procesamiento si hay varias IDs
 							await canal.setBanneds([...canal.banneds].filter(e => !aux_2.includes(e)));
+							hist(`g(${guild.id}) c(${canal.id}) usuarios [${aux_1.join(", ")}] desbaneados por ${member.user.tag}(${member.id})`);
 							return [
 								`**Usuarios desbaneados: ${aux_1.length}**`,
 								...await aux_1.mapAsync(async id => await guild.members.fetch(id)
@@ -731,6 +760,7 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 							// Procesamiento
 							aux_1 = [...canal.mods];
 							await canal.setBanneds([]);
+							hist(`g(${guild.id}) c(${canal.id}) todos desbaneados por ${member.user.tag}(${member.id})`);
 							return [
 								`**Desbaneados: ${aux_1.length}**`,
 								...await aux_1.mapAsync(async id => await guild.members.fetch(id)

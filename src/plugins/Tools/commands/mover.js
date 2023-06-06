@@ -55,7 +55,7 @@ export default async function (message, cmdName, args) {
 					return;
 				}
 
-				let channel_origen = await message.guild.fetchChannelOrNull(args[1]);
+				let channel_origen = await message.guild.fetch(args[1]).catch(() => null);
 				if(channel_origen === null)
 					message.tempReply("Canal introducido inválido", delay);
 				else if (channel_origen.type != ChannelType.GuildVoice)
@@ -77,7 +77,7 @@ export default async function (message, cmdName, args) {
 					return;
 				}
 				
-				let channel_destino = await message.guild.fetchChannelOrNull(args[0]);
+				let channel_destino = await message.guild.fetch(args[0]).catch(() => null);
 				if(channel_destino === null)
 					message.tempReply("Canal introducido inválido", delay);
 				else if (channel_destino.type != ChannelType.GuildVoice)
@@ -91,8 +91,8 @@ export default async function (message, cmdName, args) {
 				}
 			}
 			else {
-				let channel_destino = await message.guild.fetchChannelOrNull(args[0]);
-				let channel_origen = await message.guild.fetchChannelOrNull(args[1]);
+				let channel_destino = await message.guild.fetch(args[0]).catch(() => null);
+				let channel_origen = await message.guild.fetch(args[1]).catch(() => null);
 				try {
 					if(channel_origen.id == channel_destino.id)
 						message.tempReply("El canal de origen no puede ser el mismo que el destino", delay);

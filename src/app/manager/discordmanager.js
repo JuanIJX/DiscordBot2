@@ -1,47 +1,48 @@
 import { getVoiceConnection } from "@discordjs/voice";
-import { Client, Events, Guild, Message } from "discord.js"
+import { Client, Collection, Events, Message } from "discord.js"
 import { Level } from "../../libraries/logger.js";
 import intents from "../settings/intents.js"
 import partials from "../settings/partials.js"
 import { wait } from "../../libraries/utils.mjs";
 
-Guild.prototype.fetchChannelOrNull = async function(channelID) {
-	try {
-		return await this.channels.fetch(channelID);
-	} catch (error) {
-		return null;
-	}
-}
-
-Guild.prototype.fetchMemberOrNull = async function(memberID) {
-	try {
-		return await this.members.fetch(memberID);
-	} catch (error) {
-		return null;
-	}
-}
-
-Message.prototype.tempReply = function(msgReply, time=-1, delOnlyReply=false) {
-	return new Promise(async (resolve, reject) => {
-		const msgObject = this;
-		try {
-			const reply = await msgObject.reply(msgReply);
-			if(time >= 0) {
-				setTimeout(async () => {
-					let x = await reply.delete();
-					if(!delOnlyReply)
-						await msgObject.delete();
-					resolve(x);
-				}, time);
+// Mejoras de discord.js
+Object.defineProperty(Message.prototype, `tempReply`, {
+	value: function(msgReply, time=-1, delOnlyReply=false) {
+		return new Promise(async (resolve, reject) => {
+			const msgObject = this;
+			try {
+				const reply = await msgObject.reply(msgReply);
+				if(time >= 0) {
+					setTimeout(async () => {
+						let x = await reply.delete();
+						if(!delOnlyReply)
+							await msgObject.delete();
+						resolve(x);
+					}, time);
+				}
+				else
+					resolve(reply);
+			} catch (error) {
+				reject(error);
 			}
-			else
-				resolve(reply);
-		} catch (error) {
-			reject(error);
-		}
-	});
-}
+		});
+	},
+	configurable: true, writable: true
+});
 
+Object.defineProperty(Collection.prototype, `forEachAsync`, {
+	value: async function(fn, thisArg) {
+		if (typeof fn !== 'function') throw new TypeError(`${fn} is not a function`);
+		if (thisArg !== undefined) fn = fn.bind(thisArg);
+		for (const [key, value] of this)
+			await fn(value, key, this);
+		return this;
+	},
+	configurable: true, writable: true
+});
+
+
+// Manager
 export default class DiscordManager {
 	constructor(logger, token) {
 		Object.defineProperty(this, '_logger', { value: logger });

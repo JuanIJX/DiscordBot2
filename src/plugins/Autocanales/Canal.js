@@ -296,6 +296,7 @@ export default class GestorCanales {
 	static _defaultNameText = "📝comandos";
 	static _defaultNameVoice = "➕ Crear canal";
 	static _srcFile = "data";
+	static _fileName = id => `guild_${id}.sqlite`;
 	static _tableName_config = "config";
 	static _tableName_channels = "channels";
 	static _table_config = `CREATE TABLE IF NOT EXISTS ${this._tableName_config} (
@@ -533,7 +534,7 @@ export default class GestorCanales {
 	 * @returns Devuelve la ruta
 	 */
 	getFilePath(id) {
-		return path.join(this._pluginPath, this.constructor._srcFile, `guild_${id}.sqlite`);
+		return path.join(this._pluginPath, this.constructor._srcFile, this.constructor._fileName(id));
 	}
 
 	/**
@@ -561,20 +562,26 @@ export default class GestorCanales {
 				}
 			],
 		});
+		this.debug(`Guild(${guild.id}) categoria creada id(${category.id})`);
+
 		const text = await guild.channels.create({
 			name: options.text ?? this.constructor._defaultNameText,
 			type: ChannelType.GuildText,
 			parent: category
 		}).then(c => c.lockPermissions());
+		this.debug(`Guild(${guild.id}) canal de texto creado id(${text.id})`);
+
 		const voice = await guild.channels.create({
 			name: options.voice ?? this.constructor._defaultNameVoice,
 			type: ChannelType.GuildVoice,
 			parent: category
 		}).then(c => c.lockPermissions());
+		this.debug(`Guild(${guild.id}) canal de texto creado id(${voice.id})`);
 
 		const msg = await text.send(this._plugin.getEmbed(this.constructor._getEmbedHelp("/canal")));
 		for (let em of this.constructor._emojis)
 			await msg.react(em);
+		this.debug(`Guild(${guild.id}) reacciones añadidas al canal (${text.id})`);
 		
 		const guildCanal = await new GuildCanal(this, guild, {
 			category,
@@ -582,7 +589,6 @@ export default class GestorCanales {
 			voice,
 		}).initLoad();
 		this._list.set(guild.id, guildCanal);
-		this.debug(`Creado el guild(${guild.id})`);
 		return guildCanal;
 	}
 
@@ -612,7 +618,15 @@ export default class GestorCanales {
 	 * @param {string} id ID del guild que se desea eliminar
 	 */
 	async deleteFile(id) {
-		return await fsPromise.unlink(this.getFilePath(id));
+		return await fsPromise.unlink(this.getFilePath(id))
+			.then(() => {
+				this.debug(`Fichero ${this.constructor._fileName(id)} eliminado`);
+				return true;
+			})
+			.catch(error => {
+				this.error(error);
+				return false;
+			});
 	}
 
 
@@ -788,9 +802,11 @@ class GuildCanal {
 				await this._idbd.execute(`DELETE FROM ${GestorCanales._tableName_channels} WHERE channel = ?;`, canalObj.channel);
 				continue;
 			}
-			const owner = await this._guild.members.fetch(canalObj.owner).then(member => member).catch(() => null)
+			const owner = await this._guild.members.fetch(canalObj.owner).catch(() => null)
 			if(owner == null) {
+				const canalesDB = await this._idbd.rows(`SELECT * FROM ${GestorCanales._tableName_channels} WHERE owner = ?;`, canalObj.owner);
 				await this._idbd.execute(`DELETE FROM ${GestorCanales._tableName_channels} WHERE owner = ?;`, canalObj.owner);
+				this.debug(`Eliminados los canales [${canalesDB.map(cb => cb.channel).join(", ")}] de la BD del owner(${canalObj.owner} por inexistente)`);
 				continue;
 			}
 
@@ -810,6 +826,7 @@ class GuildCanal {
 			});
 			canal.reloadPerms();
 			this._list.set(channel.id, canal);
+			this.debug(`Guild(${this.id}) canal(${canal.id}) cargado`);
 			await canal.shouldbeDeleted();
 		}
 		return this;
@@ -843,6 +860,7 @@ class GuildCanal {
 			this._default_visible ? 1 : 0,
 			this._default_onlycam ? 1 : 0,
 		]);
+		this.debug(`Guild(${this.id}) cargado por primera vez`);
 		return this;
 	}
 
@@ -961,12 +979,23 @@ class GuildCanal {
 		if(guildExists) {
 			for (const channel of channels)
 				await channel.delete();
-			if(this.category != null && await this.guild.channels.fetch(this.category.id).then(() => true).catch(() => false))
+			if(this.category != null && await this.guild.channels.fetch(this.category.id).then(() => true).catch(() => false)) {
 				await this.guild.channels.delete(this.category);
-			if(this.text != null && await this.guild.channels.fetch(this.text.id).then(() => true).catch(() => false))
+				this.debug(`Guild(${this.guild.id}) canal de texto eliminado id(${this.category.id})`);
+			} else
+				this.error(`No se pudo eliminar guild(${this.guild.id}) id(${this.category.id})`);
+
+			if(this.text != null && await this.guild.channels.fetch(this.text.id).then(() => true).catch(() => false)) {
 				await this.guild.channels.delete(this.text);
-			if(this.voice != null && await this.guild.channels.fetch(this.voice.id).then(() => true).catch(() => false))
+				this.debug(`Guild(${this.guild.id}) canal de texto eliminado id(${this.text.id})`);
+			} else
+				this.error(`No se pudo eliminar guild(${this.guild.id}) id(${this.text.id})`);
+
+			if(this.voice != null && await this.guild.channels.fetch(this.voice.id).then(() => true).catch(() => false)) {
 				await this.guild.channels.delete(this.voice);
+				this.debug(`Guild(${this.guild.id}) canal de texto eliminado id(${this.voice.id})`);
+			} else
+				this.error(`No se pudo eliminar guild(${this.guild.id}) id(${this.voice.id})`);
 		}
 		return true;
 	}
@@ -978,14 +1007,11 @@ class GuildCanal {
 	 * @returns true en caso de que sea correcto
 	 */
 	async disconnect() {
+		if(! await this.close())
+			return false;
 		this._manager.list.delete(this.id);
-
-		var error = await this.close().catch(e => e);
-		if(error instanceof Error) { this.error(error); return false; }
-
-		error = await this._manager.deleteFile(this.id).catch(e => e);
-		if(error instanceof Error) { this.error(error); return false; }
-
+		if(! await this._manager.deleteFile(this.id))
+			return false;
 		return true;
 	}
 
@@ -1058,7 +1084,15 @@ class GuildCanal {
 
 	// Cerrar conexion a la base de datos
 	async close() {
-		await this._idbd.close();
+		return await this._idbd.close()
+			.then(() => {
+				this.debug(`BD desconectada g(${this.id}) f(${path.basename(this._idbd._memoryPath)})`);
+				return true;
+			})
+			.catch(error => {
+				this.error(error);
+				return false;
+			});
 	}
 }
 

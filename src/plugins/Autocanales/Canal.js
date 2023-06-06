@@ -1,7 +1,7 @@
 import path from "path"
 import fsPromise from "fs/promises"
-import { BaseChannel, ChannelType, Collection, GuildMember, User } from "discord.js"
-import { createDirs, wait } from "../../libraries/utils.mjs";
+import { BaseChannel, ChannelType, Collection, GuildMember, PermissionFlagsBits, User } from "discord.js"
+import { createDirs } from "../../libraries/utils.mjs";
 import Sqlite from "../../libraries/SQL_sqlite3.js";
 import { Level } from "../../libraries/logger.js";
 
@@ -12,10 +12,289 @@ export const Type = {
 	CLOSED: 3,
 };
 
+export const CRol = {
+	OWNER: 0,
+	MOD: 1,
+	MEMBER: 2,
+	BANNED: 3,
+	NONE: 4,
+}
+
+export const RolPerms = [
+	{	// 0 - PUBLIC
+		OWNER: {
+			ViewChannel: true,
+
+			ReadMessageHistory: true,
+			Connect: true,
+			SendMessages: true,
+			Speak: true,
+
+			MoveMembers: true,
+			ModerateMembers: true,
+			ManageMessages: true,
+			ManageChannels: true,
+		},
+		MOD: {
+			ViewChannel: true,
+
+			ReadMessageHistory: true,
+			Connect: true,
+			SendMessages: true,
+			Speak: true,
+
+			MoveMembers: null,
+			ModerateMembers: true,
+			ManageMessages: false,
+			ManageChannels: false,
+		},
+		MEMBER: {
+			ViewChannel: true,
+
+			ReadMessageHistory: true,
+			Connect: true,
+			SendMessages: true,
+			Speak: null,
+
+			MoveMembers: null,
+			ModerateMembers: null,
+			ManageMessages: null,
+			ManageChannels: null,
+		},
+		BANNED: {
+			ViewChannel: null,
+
+			ReadMessageHistory: false,
+			Connect: false,
+			SendMessages: false,
+			Speak: null,
+
+			MoveMembers: null,
+			ModerateMembers: null,
+			ManageMessages: null,
+			ManageChannels: null,
+		},
+		NONE: {
+			ViewChannel: null,
+
+			ReadMessageHistory: true,
+			Connect: true,
+			SendMessages: true,
+			Speak: null,
+
+			MoveMembers: null,
+			ModerateMembers: null,
+			ManageMessages: null,
+			ManageChannels: null,
+		}
+	},
+	{	// 1 - PRIVATE
+		OWNER: {
+			ViewChannel: true,
+
+			ReadMessageHistory: true,
+			Connect: true,
+			SendMessages: true,
+			Speak: true,
+
+			MoveMembers: true,
+			ModerateMembers: true,
+			ManageMessages: true,
+			ManageChannels: true,
+		},
+		MOD: {
+			ViewChannel: true,
+
+			ReadMessageHistory: true,
+			Connect: true,
+			SendMessages: true,
+			Speak: true,
+
+			MoveMembers: null,
+			ModerateMembers: true,
+			ManageMessages: null,
+			ManageChannels: null,
+		},
+		MEMBER: {
+			ViewChannel: true,
+
+			ReadMessageHistory: true,
+			Connect: true,
+			SendMessages: true,
+			Speak: null,
+
+			MoveMembers: null,
+			ModerateMembers: null,
+			ManageMessages: null,
+			ManageChannels: null,
+		},
+		BANNED: {
+			ViewChannel: null,
+
+			ReadMessageHistory: false,
+			Connect: false,
+			SendMessages: false,
+			Speak: null,
+
+			MoveMembers: null,
+			ModerateMembers: null,
+			ManageMessages: null,
+			ManageChannels: null,
+		},
+		NONE: {
+			ViewChannel: null,
+
+			ReadMessageHistory: false,
+			Connect: false,
+			SendMessages: false,
+			Speak: null,
+
+			MoveMembers: null,
+			ModerateMembers: null,
+			ManageMessages: null,
+			ManageChannels: null,
+		}
+	},
+	{	// 2 - SECRET
+		OWNER: {
+			ViewChannel: true,
+
+			ReadMessageHistory: true,
+			Connect: true,
+			SendMessages: true,
+			Speak: true,
+
+			MoveMembers: true,
+			ModerateMembers: true,
+			ManageMessages: true,
+			ManageChannels: true,
+		},
+		MOD: {
+			ViewChannel: true,
+
+			ReadMessageHistory: true,
+			Connect: true,
+			SendMessages: true,
+			Speak: true,
+
+			MoveMembers: null,
+			ModerateMembers: true,
+			ManageMessages: null,
+			ManageChannels: null,
+		},
+		MEMBER: {
+			ViewChannel: null,
+
+			ReadMessageHistory: null,
+			Connect: false,
+			SendMessages: false,
+			Speak: null,
+
+			MoveMembers: null,
+			ModerateMembers: null,
+			ManageMessages: null,
+			ManageChannels: null,
+		},
+		BANNED: {
+			ViewChannel: null,
+
+			ReadMessageHistory: false,
+			Connect: false,
+			SendMessages: false,
+			Speak: null,
+
+			MoveMembers: null,
+			ModerateMembers: null,
+			ManageMessages: null,
+			ManageChannels: null,
+		},
+		NONE: {
+			ViewChannel: null,
+
+			ReadMessageHistory: false,
+			Connect: false,
+			SendMessages: false,
+			Speak: null,
+
+			MoveMembers: null,
+			ModerateMembers: null,
+			ManageMessages: null,
+			ManageChannels: null,
+		}
+	},
+	{	// 3 - CLOSED
+		OWNER: {
+			ViewChannel: true,
+
+			ReadMessageHistory: true,
+			Connect: true,
+			SendMessages: true,
+			Speak: true,
+
+			MoveMembers: true,
+			ModerateMembers: true,
+			ManageMessages: true,
+			ManageChannels: true,
+		},
+		MOD: {
+			ViewChannel: null,
+
+			ReadMessageHistory: null,
+			Connect: false,
+			SendMessages: false,
+			Speak: null,
+
+			MoveMembers: null,
+			ModerateMembers: null,
+			ManageMessages: null,
+			ManageChannels: null,
+		},
+		MEMBER: {
+			ViewChannel: null,
+
+			ReadMessageHistory: null,
+			Connect: false,
+			SendMessages: false,
+			Speak: null,
+
+			MoveMembers: null,
+			ModerateMembers: null,
+			ManageMessages: null,
+			ManageChannels: null,
+		},
+		BANNED: {
+			ViewChannel: null,
+
+			ReadMessageHistory: false,
+			Connect: false,
+			SendMessages: false,
+			Speak: false,
+
+			MoveMembers: null,
+			ModerateMembers: null,
+			ManageMessages: null,
+			ManageChannels: null,
+		},
+		NONE: {
+			ViewChannel: null,
+
+			ReadMessageHistory: false,
+			Connect: false,
+			SendMessages: false,
+			Speak: null,
+
+			MoveMembers: null,
+			ModerateMembers: null,
+			ManageMessages: null,
+			ManageChannels: null,
+		}
+	}
+];
+
 export default class GestorCanales {
-	static _defaultNameCategory = "< ( * -=- * ) > AutoCanales < ( * -=- * ) > (N)";
-	static _defaultNameText = "📝comandos (N)";
-	static _defaultNameVoice = "➕ Crear canal (N)";
+	static _defaultNameCategory = "< ( * -=- * ) > AutoCanales < ( * -=- * ) >";
+	static _defaultNameText = "📝comandos";
+	static _defaultNameVoice = "➕ Crear canal";
 	static _srcFile = "data";
 	static _tableName_config = "config";
 	static _tableName_channels = "channels";
@@ -49,91 +328,157 @@ export default class GestorCanales {
 		onlycam INTEGER NOT NULL CHECK (onlycam IN (0, 1)),
 		FOREIGN KEY (guild) REFERENCES ${this._tableName_config}(guild)
 	);`;
-	static getEmbedHelp = cmdname => {
+	static _emojis = [ '🔓', '🔏', '🔐', '🔑', '🙉', '🙈' ];
+	static _permsAllowDeny = (type, cRol, visible=true) => {
+		const perms = RolPerms[type][CRol.getKeyByValue(cRol)];
+		const ret = { allow: [], deny: [] }
+		for (const key in perms) {
+			if(perms[key] === null)
+				continue;
+			ret[perms[key] === true ? 'allow' : 'deny'].push(PermissionFlagsBits[key]);
+		}
+		if(visible===false && cRol==CRol.NONE )
+			ret.deny.push(PermissionFlagsBits.ViewChannel);
+		return ret;
+	};
+	static _getEmbedHelp = cmdname => {
 		return {
 			title: `Información sobre el grupo de canales`,
-			color: 0xFF0092,
 			description: `Para crear un canal simplemente entra a la sala de auto-crear y automáticamente tendrás tu canal temporal 🕯.`,
 			fields: [
 				{
-					name: `${cmdname} lock <0, 1, 2, 3>`,
+					name: `${cmdname} my lock <0, 1, 2, 3>`,
 					value: `Abre o cierra el canal
 						🔓 (0): Todos menos baneados
-						🔒 (1): Solo miembros, mods y creador
+						🔏 (1): Solo miembros, mods y creador
 						🔐 (2): Mods y creador
-						🔏 (3): Solo creador`
+						🔑 (3): Solo creador`
 				},
 				{
-					name: `${cmdname} mod <add, del> <@mentionUser1> <@mentionUser2> ...`,
+					name: `${cmdname} my mod`,
 					value: `Añade o elimina un/os moderador/es al grupo de canales`
 				},
 				{
-					name: `${cmdname} member <add, del> <@mentionUser1> <@mentionUser2> ...`,
+					name: `${cmdname} my member`,
 					value: `Añade o elimina un/os miembro/s al grupo de canales`
 				},
 				{
-					name: `${cmdname} ban <@mentionUser>`,
+					name: `${cmdname} my ban`,
 					value: `Banea o desbanea a un usuario del grupo de canales`
 				},
 				{
-					name: `${cmdname} unban <@mentionUser>`,
-					value: `Banea o desbanea a un usuario del grupo de canales`
-				},
-				{
-					name: `${cmdname} kick <@mentionUser1> <@mentionUser2> ...`,
+					name: `${cmdname} my kick`,
 					value: `Expulsa a usuario/s de la sala`
 				},
 				{
-					name: `${cmdname} set name`,
-					value: `Cambia el nombre de la categoría (en construccion)`
+					name: `${cmdname} my name`,
+					value: `Cambia el nombre del canal (en construccion)`
 				},
 				{
-					name: `${cmdname} set name_t`,
-					value: `Cambia el nombre del canal de texto (en construccion)`
+					name: `${cmdname} my temp`,
+					value: `Cambia el canal a temporal`
 				},
 				{
-					name: `${cmdname} set name_v`,
-					value: `Cambia el nombre del canal de voz (en construccion)`
-				},
-				{
-					name: `${cmdname} set type <perm, 0, 1, 2...>`,
-					value: `Establece el tiempo de duración del canal (segundos)`
-				},
-				{
-					name: `${cmdname} set type antiadmin`,
+					name: `${cmdname} my antiadmin`,
 					value: `Activa/desactiva el antiadmin del canal`
 				},
 				{
-					name: `${cmdname} set type antibots`,
+					name: `${cmdname} my antibots`,
 					value: `Permite la entrada de bots sin añadir`
 				},
 				{
-					name: `${cmdname} set inv`,
+					name: `${cmdname} my inv`,
 					value: `Pone invisible o visible el canal
 					🙉 Invisibilidad desactivada
 					🙈 Invisibilidad activada`
-				},
-				{
-					name: `${cmdname} set antiadmin`,
-					value: `Activa/desactiva el antiadmin`
-				},
-			],
-			footer: {
-				name: `Ayuda sobre los comandos`,
-				value: `this.main.bot.user.displayAvatarURL()`
-			}
+				}
+			]
 		};
 	}
+	static _getEmbedInfoChannel = canal => {
+		return {
+			title: `${canal.name}`,
+			fields: [
+				{
+					name: `Creación`,
+					value: canal.created.format("d/m/Y\nH:i:s"),
+					inline: true
+				},
+				{
+					name: `Dueño/a`,
+					value: canal.owner.displayName,
+					inline: true
+				},
+				{
+					name: `Usuarios`,
+					value: [
+						`Mods: ${canal.mods.size}`,
+						`Miembros: ${canal.members.size}`,
+						`Baneos: ${canal.banneds.size}`,
+					].join("\n"),
+					inline: true
+				},
+				//{ name: '\u200b', value: '\u200b', inline: true },
+				{ name: 'Tipo', value: this._emojis[canal.type], inline: true },
+				{ name: 'Temporal', value: canal.temp ? '🕥' : '🤚', inline: true },
+				{ name: 'Visible', value: canal.visible ? '👀' : '🟠', inline: true },
+				{ name: 'Onlycam', value: canal.onlycam ? '📸' : '🟠', inline: true },
+				{ name: 'Anti-admin', value: canal.antiadmin ? '🟢' : '🟠', inline: true },
+				{ name: 'Anti-bots', value: canal.antibots ? '🟢' : '🟠', inline: true },
+			]
+		};
+	}
+	static _getEmbedInfoChannelMods = async canal => {
+		const list = await [...canal.mods].mapAsync(async id =>
+			await canal.guild.members.fetch(id)
+				.then(m => `🠺 ${m.user.tag}`)
+				.catch(async () => await canal.guild.client.users.fetch(id)
+						.then(u => `🗴 ${u.tag}`)
+						.catch(() => `Err (${id})`)
+				)
+		);
+		return {
+			title: `${canal.name}`,
+			description: `**Moderadores (${list.length})**\n` + (list > 0 ? list.join("\n") : `Vacío`)
+		};
+	}
+	static _getEmbedInfoChannelMembers = async canal => {
+		const list = await [...canal.members].mapAsync(async id =>
+			await canal.guild.members.fetch(id)
+				.then(m => `🠺 ${m.user.tag}`)
+				.catch(async () => await canal.guild.client.users.fetch(id)
+						.then(u => `🗴 ${u.tag}`)
+						.catch(() => `Err (${id})`)
+				)
+		);
+		return {
+			title: `${canal.name}`,
+			description: `**Miembros (${list.length})**\n` + (list > 0 ? list.join("\n") : `Vacío`)
+		};
+	}
+	static _getEmbedInfoChannelBanneds = async canal => {
+		const list = await [...canal.banneds].mapAsync(async id =>
+			await canal.guild.members.fetch(id)
+				.then(m => `🠺 ${m.user.tag}`)
+				.catch(async () => await canal.guild.client.users.fetch(id)
+						.then(u => `🗴 ${u.tag}`)
+						.catch(() => `Err (${id})`)
+				)
+		);
+		return {
+			title: `${canal.name}`,
+			description: `**Baneados (${list.length})**\n` + (list > 0 ? list.join("\n") : `Vacío`)
+		};
+	}
+	
+
 
 	/**
 	 * 
-	 * @param {String} pluginPath 
+	 * @param {Module} plugin 
 	 */
 	constructor(plugin) {
-		
 		Object.defineProperty(this, "_plugin", { value: plugin });
-		Object.defineProperty(this, "_pluginPath", { value: plugin.thisPath });
-		Object.defineProperty(this, "discordManager", { value: plugin.discordManager });
 		Object.defineProperty(this, "_list", { value: new Collection() });
 	}
 
@@ -163,7 +508,7 @@ export default class GestorCanales {
 					if(guild == null)
 						continue;
 					this._list.set(guildId, await new GuildCanal(this, guild).load());
-					this.debug(`Guild(${this.id}) cargado`);
+					this.debug(`Guild(${guildId}) cargado`);
 				}
 			} catch (error) {
 				this.error(error);
@@ -207,21 +552,28 @@ export default class GestorCanales {
 
 		const category = await guild.channels.create({
 			name: options.category ?? this.constructor._defaultNameCategory,
-			type: ChannelType.GuildCategory
+			type: ChannelType.GuildCategory,
+			permissionOverwrites: [
+				{
+					id: guild.id,
+					allow: [PermissionFlagsBits.ReadMessageHistory],
+					deny: [PermissionFlagsBits.SendMessages],
+				}
+			],
 		});
 		const text = await guild.channels.create({
 			name: options.text ?? this.constructor._defaultNameText,
 			type: ChannelType.GuildText,
 			parent: category
-		});
+		}).then(c => c.lockPermissions());
 		const voice = await guild.channels.create({
 			name: options.voice ?? this.constructor._defaultNameVoice,
 			type: ChannelType.GuildVoice,
 			parent: category
-		});
+		}).then(c => c.lockPermissions());
 
-		const msg = await text.send(this._plugin.getEmbed(this.constructor.getEmbedHelp("canal")));
-		for (let em of [ '🔏', '🔐', '🔒', '🔓', '🙉', '🙈' ])
+		const msg = await text.send(this._plugin.getEmbed(this.constructor._getEmbedHelp("/canal")));
+		for (let em of this.constructor._emojis)
 			await msg.react(em);
 		
 		const guildCanal = await new GuildCanal(this, guild, {
@@ -287,8 +639,29 @@ export default class GestorCanales {
 			const guildCanal = this.list.get(reaction.message.channel.guild.id);
 			if(guildCanal.text.id === reaction.message.channel.id) {
 				await reaction.users.remove(user.id);
+				const canal = guildCanal.list.find(canal => canal.owner.id == user.id);
+				if(!canal) return;
 
-				console.log(reaction.emoji.name);
+				switch (this.constructor._emojis.getKeyByValue(reaction.emoji.name)) {
+					case "0": // Lock 1
+						await canal.setType(Type.PUBLIC);
+						break;
+					case "1": // Lock 2
+						await canal.setType(Type.PRIVATE);
+						break;
+					case "2": // Lock 3
+						await canal.setType(Type.SECRET);
+						break;
+					case "3": // Lock 4
+						await canal.setType(Type.CLOSED);
+						break;
+					case "4": // Visible
+						await canal.setVisible(true);
+						break;
+					case "5": // Invisible
+						await canal.setVisible(false);
+						break;
+				}
 			}
 		}
 	}
@@ -302,6 +675,8 @@ export default class GestorCanales {
 				await guildCanal.setText(null);
 			else if(guildCanal.voice.id == channel.id)
 				await guildCanal.setVoice(null);
+			else if(guildCanal.list.has(channel.id))
+				await guildCanal.list.get(channel.id).delete(false);
 		}
 	}
 
@@ -309,8 +684,12 @@ export default class GestorCanales {
 		if(this.list.has(channel.guild.id)) {
 			const guildCanal = this.list.get(channel.guild.id);
 			if(guildCanal.voice.id === channel.id) {
-				const canal = await guildCanal.createCanal(member.user);
-				await member.voice.setChannel(canal.channel);
+				try {
+					var canal = guildCanal.list.find(c => c.owner.id == member.user.id);
+					if(!canal)
+						canal = await guildCanal.createCanal(member);
+					await member.voice.setChannel(canal?.channel);
+				} catch (error) { this.error(error); }
 			}
 		}
 	}
@@ -318,18 +697,9 @@ export default class GestorCanales {
 	async _leaveEvent(channel) {
 		if(this.list.has(channel.guild.id)) {
 			const guildCanal = this.list.get(channel.guild.id);
-			if(guildCanal.list.has(channel.id)) {
-				const canal = guildCanal.list.get(channel.id);
-				if(canal.temp && canal.count == 0)
-					await canal.delete();
-				/*else
-					console.log(`channel.id: ${channel.id}, temp: ${canal.temp}, count: ${canal.count}`);*/
-			}
-			/*else
-				console.log(`channel.id: ${channel.id}`);*/
+			if(guildCanal.list.has(channel.id))
+				await guildCanal.list.get(channel.id).shouldbeDeleted();
 		}
-		/*else
-			console.log(`Guild: ${channel.guild.id}`);*/
 	}
 }
 
@@ -381,7 +751,7 @@ class GuildCanal {
 				await this._idbd.execute(`DELETE FROM ${GestorCanales._tableName_channels} WHERE channel = ?;`, canalObj.channel);
 				continue;
 			}
-			const owner = await this._guild.members.fetch(canalObj.owner).then(member => member.user).catch(() => null)
+			const owner = await this._guild.members.fetch(canalObj.owner).then(member => member).catch(() => null)
 			if(owner == null) {
 				await this._idbd.execute(`DELETE FROM ${GestorCanales._tableName_channels} WHERE owner = ?;`, canalObj.owner);
 				continue;
@@ -393,17 +763,17 @@ class GuildCanal {
 				name: canalObj.name,
 				owner,
 				type: parseInt(canalObj.type),
-				mods: canalObj.mods.split(";"),
-				members: canalObj.members.split(";"),
-				banneds: canalObj.banneds.split(";"),
+				mods: canalObj.mods.split(";").filter2(id => id!=""),
+				members: canalObj.members.split(";").filter2(id => id!=""),
+				banneds: canalObj.banneds.split(";").filter2(id => id!=""),
 				antiadmin: canalObj.antiadmin == 1 ? true : false,
 				antibots: canalObj.antibots == 1 ? true : false,
 				visible: canalObj.visible == 1 ? true : false,
 				onlycam: canalObj.onlycam == 1 ? true : false,
 			});
+			canal.reloadPerms();
 			this._list.set(channel.id, canal);
-			if(canal.temp && canal.count == 0)
-				await canal.delete();
+			await canal.shouldbeDeleted();
 		}
 		return this;
 	}
@@ -531,46 +901,80 @@ class GuildCanal {
 		this._default_onlycam = data;
 	}
 
-	// Eliminar guild
+	/**
+	 * Devuelve el número de canales que posee un User
+	 * 
+	 * @param {string} ownerID ID del User
+	 * @returns Cantidad de canales que posee
+	 */
+	getCountCanales(ownerID) {
+		return this.list.reduce((ac, canal) => ac += canal.owner.id == ownerID ? 1 : 0, 0);
+	}
+
+	/**
+	 * Elimina toda la configuración del Autocanales en el guild
+	 * 
+	 * @returns true en caso de que sea correcta la eliminación
+	 */
 	async delete() {
 		const channels = this.list.map(canal => canal.channel);
-		await this.disconnect();
+		if(! await this.disconnect()) return false;
 		this.debug(`Eliminado el guild(${this.id})`);
 
 		for (const channel of channels)
 			await channel.delete();
-
 		if(this.category != null && await this.guild.channels.fetch(this.category.id).then(() => true).catch(() => false))
 			await this.guild.channels.delete(this.category);
 		if(this.text != null && await this.guild.channels.fetch(this.text.id).then(() => true).catch(() => false))
 			await this.guild.channels.delete(this.text);
 		if(this.voice != null && await this.guild.channels.fetch(this.voice.id).then(() => true).catch(() => false))
 			await this.guild.channels.delete(this.voice);
+		return true;
 	}
 
 	/**
 	 * Desconecta de la base de datos, elimina el fichero
 	 * y elimina del listado del guilds
+	 * 
+	 * @returns true en caso de que sea correcto
 	 */
 	async disconnect() {
-		await this.close();
-		await this._manager.deleteFile(this.id);
 		this._manager.list.delete(this.id);
+
+		var error = await this.close().catch(e => e);
+		if(error instanceof Error) { this.error(error); return false; }
+
+		error = await this._manager.deleteFile(this.id).catch(e => e);
+		if(error instanceof Error) { this.error(error); return false; }
+
+		return true;
 	}
 
-	// Crear canal
+	/**
+	 * Crea un canal
+	 * 
+	 * @param {GuildMember} owner 
+	 * @returns 
+	 */
 	async createCanal(owner) {
-		if(!(owner instanceof User))
-			throw new Error("Se debe proporcionar un User");
+		if(!(owner instanceof GuildMember))
+			throw new Error("Se debe proporcionar un GuildMember");
 		if(await this.guild.members.fetch(owner.id).then(() => false).catch(() => true))
 			throw new Error("El miembro no se encuentra en el servidor");
+		if(!this._idbd.isConnected())
+			throw new Error("La base de datos no está conectada");
 
-		const channelName = this.defaultChannelname.replace(`$USER`, owner.tag)
+		const channelName = this.defaultChannelname.replace(`$USER`, owner.displayName)
 		const channel = await this.guild.channels.create({
 			name: channelName,
 			type: ChannelType.GuildVoice,
+			permissionOverwrites: [
+				{ id: this.guild.id, ...GestorCanales._permsAllowDeny(this.defaultType, CRol.NONE, this.defaultVisible) },
+				{ id: owner.id, 	 ...GestorCanales._permsAllowDeny(this.defaultType, CRol.OWNER) }
+			],
 			parent: this.category
 		});
+		//this._default_temp = false; // TEMP
 		await this._idbd.execute(`INSERT INTO ${GestorCanales._tableName_channels} (
 			guild,
 			channel,
@@ -607,7 +1011,9 @@ class GuildCanal {
 			visible: this.defaultVisible,
 			onlycam: this.defaultOnlycam,
 		});
+		await canal.reloadPerms(this.defaultType);
 		this._list.set(channel.id, canal);
+		this.debug(`Canal(${canal.id}) del guild(${this.id}) creado`);
 		return canal;
 	}
 
@@ -630,14 +1036,17 @@ class Canal {
 		Object.defineProperty(this, "_name", { value: data.name, writable: true });
 		Object.defineProperty(this, "_owner", { value: data.owner, writable: true });
 		Object.defineProperty(this, "_type", { value: data.type, writable: true });
-		Object.defineProperty(this, "_mods", { value: data.mods, writable: true });
-		Object.defineProperty(this, "_members", { value: data.members, writable: true });
-		Object.defineProperty(this, "_banneds", { value: data.banneds, writable: true });
+		Object.defineProperty(this, "_mods", { value: new Set(data.mods) });
+		Object.defineProperty(this, "_members", { value: new Set(data.members) });
+		Object.defineProperty(this, "_banneds", { value: new Set(data.banneds) });
 		Object.defineProperty(this, "_antiadmin", { value: data.antiadmin, writable: true });
 		Object.defineProperty(this, "_antibots", { value: data.antibots, writable: true });
 		Object.defineProperty(this, "_visible", { value: data.visible, writable: true });
 		Object.defineProperty(this, "_onlycam", { value: data.onlycam, writable: true });
 	}
+
+	debug(msg) { this._manager._plugin.log(Level.DEBUG, msg); }
+	error(msg) { this._manager._plugin.log(Level.ERROR, msg); }
 
 	get _idbd() { return this._parent._idbd; }
 	get _manager() { return this._parent._manager; }
@@ -659,6 +1068,7 @@ class Canal {
 	get onlycam() { return this._onlycam; }
 
 	get count() { return this.channel.members.size; }
+	
 
 	// Setters
 	async setTemp(data) {
@@ -666,99 +1076,34 @@ class Canal {
 			throw new Error(`Se debe proporcionar true o false`);
 		await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET temp = ? WHERE channel = ?`, data, this.id);
 		this._temp = data;
+		this.shouldbeDeleted();
 	}
 	async setName(data) {
 		if(typeof data != "string")
 			throw new Error(`Se debe proporcionar una cadena`);
 		await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET name = ? WHERE channel = ?`, data, this.id);
 		this._name = data;
+		// Cambiarlo del canal
 	}
 	async setOwner(data) {
-		if(await this.guild.members.fetch(data?.id).then(() => false).catch(() => true))
-			throw new Error("Se debe proporcionar un User");
+		if(await this.guild.members.fetch(data).then(() => false).catch(() => true))
+			throw new Error("Se debe proporcionar un User válido");
+		if(typeof data == "string") data = { id: data };
+		if(data.id == this.guild.id)
+			throw new Error(`No se puede añadir esta ID como dueño`);
 		// Tambien hay que darselo al canal
-		await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET owner = ? WHERE channel = ?`, data, this.id);
+		// Y eliminarlo de mod, member, banned
+		await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET owner = ? WHERE channel = ?`, data.id, this.id);
 		this._owner = data;
+		this.updateUserPerm(this.owner.id);
 	}
 	async setType(data) {
 		if(!Object.values(Type).includes(data))
 			throw new Error(`El valor debe ser alguno de estos: [${Object.values(Type)}]`);
 		await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET type = ? WHERE channel = ?`, data, this.id);
 		this._type = data;
+		await this.reloadPerms();
 	}
-
-	// Mods
-	async addMod(data) {
-		if(await this.guild.members.fetch(data?.id).then(() => false).catch(() => true))
-			throw new Error("Se debe proporcionar un User");
-		if(!this._mods.includes(data.id)) {
-			await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET mods = ? WHERE channel = ?`, [...this._mods, data.id].join(";"), this.id);
-			this.mods.push(data.id);
-		}
-	}
-	async delMod(data) {
-		if(await this.guild.members.fetch(data?.id).then(() => false).catch(() => true))
-			throw new Error("Se debe proporcionar un User");
-		if(!this._mods.includes(data.id)) {
-			await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET mods = ? WHERE channel = ?`, [...this._mods, data.id].join(";"), this.id);
-			this.mods.push(data.id);
-		}
-	}
-	async _setMods(data) {
-		if(!Array.isArray(data))
-			throw new Error(`El valor debe ser un array`);
-		await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET mods = ? WHERE channel = ?`, data.join(";"), this.id);
-		this._mods = data;
-	}
-
-	// Members
-	async addMember(data) {
-		if(await this.guild.members.fetch(data?.id).then(() => false).catch(() => true))
-			throw new Error("Se debe proporcionar un User");
-		if(!this._members.includes(data.id)) {
-			await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET members = ? WHERE channel = ?`, [...this._members, data.id].join(";"), this.id);
-			this.members.push(data.id);
-		}
-	}
-	async delMember(data) {
-		if(await this.guild.members.fetch(data?.id).then(() => false).catch(() => true))
-			throw new Error("Se debe proporcionar un User");
-		if(!this._members.includes(data.id)) {
-			await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET members = ? WHERE channel = ?`, [...this._members, data.id].join(";"), this.id);
-			this.members.push(data.id);
-		}
-	}
-	async _setmembers(data) {
-		if(!Array.isArray(data))
-			throw new Error(`El valor debe ser un array`);
-		await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET members = ? WHERE channel = ?`, data.join(";"), this.id);
-		this._members = data;
-	}
-
-	// Banneds
-	async addBanned(data) {
-		if(await this.guild.members.fetch(data?.id).then(() => false).catch(() => true))
-			throw new Error("Se debe proporcionar un User");
-		if(!this._banneds.includes(data.id)) {
-			await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET banneds = ? WHERE channel = ?`, [...this._banneds, data.id].join(";"), this.id);
-			this.banneds.push(data.id);
-		}
-	}
-	async delBanned(data) {
-		if(await this.guild.members.fetch(data?.id).then(() => false).catch(() => true))
-			throw new Error("Se debe proporcionar un User");
-		if(!this._banneds.includes(data.id)) {
-			await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET banneds = ? WHERE channel = ?`, [...this._banneds, data.id].join(";"), this.id);
-			this.banneds.push(data.id);
-		}
-	}
-	async _setBanneds(data) {
-		if(!Array.isArray(data))
-			throw new Error(`El valor debe ser un array`);
-		await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET banneds = ? WHERE channel = ?`, data.join(";"), this.id);
-		this._banneds = data;
-	}
-
 	async setAntiadmin(data) {
 		if(typeof data != "boolean")
 			throw new Error(`Se debe proporcionar true o false`);
@@ -776,6 +1121,7 @@ class Canal {
 			throw new Error(`Se debe proporcionar true o false`);
 		await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET visible = ? WHERE channel = ?`, data, this.id);
 		this._visible = data;
+		await this.updateUserPerm(this.guild.id);
 	}
 	async setOnlycam(data) {
 		if(typeof data != "boolean")
@@ -784,12 +1130,235 @@ class Canal {
 		this._onlycam = data;
 	}
 
-	//
-	async delete() {
+
+	// Mods
+	async addMod(data) {
+		if(await this.guild.members.fetch(data).then(() => false).catch(() => true))
+			throw new Error("Se debe proporcionar un User válido");
+		if(typeof data == "string") data = { id: data };
+		if(data.id == this.owner.id)
+			throw new Error(`No se puede añadir al dueño del canal`);
+		if(data.id == this.guild.id)
+			throw new Error(`No se puede añadir esta ID`);
+
+		await this.delMember(data.id);
+		await this.delBanned(data.id);
+		if(!this._mods.has(data.id)) {
+			await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET mods = ? WHERE channel = ?`, [...this._mods, data.id].join(";"), this.id);
+			this._mods.add(data.id);
+			await this.updateUserPerm(data.id);
+		}
+	}
+	async delMod(data) {
+		if(!(data instanceof User) && !(data instanceof GuildMember) && typeof data != "string")
+			throw new Error("Dato inválido");
+		if(typeof data == "string") data = { id: data };
+
+		if(this._mods.has(data.id)) {
+			await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET mods = ? WHERE channel = ?`, [...this._mods].deleteElement(data.id).join(";"), this.id);
+			if(data.id != this.owner.id) await this.channel.permissionOverwrites.delete(data.id);
+			this._mods.delete(data.id);
+		}
+	}
+	async setMods(data, reload=true) {
+		if(!Array.isArray(data))
+			throw new Error(`El valor debe ser un array`);
+		data = [...new Set(data)];
+		data.deleteElement(this.owner.id);
+		data.deleteElement(this.guild.id);
+		await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET mods = ? WHERE channel = ?`, data.join(";"), this.id);
+		this._mods.clear(); for(const e of data) this._mods.add(e);
+		if(reload)
+			await this.reloadPerms();
+	}
+
+	// Members
+	async addMember(data) {
+		if(await this.guild.members.fetch(data).then(() => false).catch(() => true))
+			throw new Error("Se debe proporcionar un User válido");
+		if(typeof data == "string") data = { id: data };
+		if(data.id == this.owner.id)
+			throw new Error(`No se puede añadir al dueño del canal`);
+		if(data.id == this.guild.id)
+			throw new Error(`No se puede añadir esta ID`);
+
+		await this.delMod(data.id);
+		await this.delBanned(data.id);
+		if(!this._members.has(data.id)) {
+			await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET members = ? WHERE channel = ?`, [...this._members, data.id].join(";"), this.id);
+			this._members.add(data.id);
+			await this.updateUserPerm(data.id);
+		}
+	}
+	async delMember(data) {
+		if(!(data instanceof User) && !(data instanceof GuildMember) && typeof data != "string")
+			throw new Error("Dato inválido");
+		if(typeof data == "string") data = { id: data };
+
+		if(this._members.has(data.id)) {
+			await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET members = ? WHERE channel = ?`, [...this._members].deleteElement(data.id).join(";"), this.id);
+			if(data.id != this.owner.id) await this.channel.permissionOverwrites.delete(data.id);
+			this._members.delete(data.id);
+		}
+	}
+	async setMembers(data, reload=true) {
+		if(!Array.isArray(data))
+			throw new Error(`El valor debe ser un array`);
+		data = [...new Set(data)];
+		data.deleteElement(this.owner.id);
+		data.deleteElement(this.guild.id);
+		await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET members = ? WHERE channel = ?`, data.join(";"), this.id);
+		this._members.clear(); for(const e of data) this._members.add(e);
+		if(reload) await this.reloadPerms();
+	}
+
+	// Banneds
+	async addBanned(data) {
+		if(await this.guild.members.fetch(data).then(() => false).catch(() => true))
+			throw new Error("Se debe proporcionar un User válido");
+		if(typeof data == "string") data = { id: data };
+		if(data.id == this.owner.id)
+			throw new Error(`No se puede añadir al dueño del canal`);
+		if(data.id == this.guild.id)
+			throw new Error(`No se puede añadir esta ID`);
+
+		await this.delMod(data.id);
+		await this.delMember(data.id);
+		if(!this._banneds.has(data.id)) {
+			await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET banneds = ? WHERE channel = ?`, [...this._banneds, data.id].join(";"), this.id);
+			this._banneds.add(data.id);
+			await this.updateUserPerm(data.id);
+		}
+	}
+	async delBanned(data) {
+		if(!(data instanceof User) && !(data instanceof GuildMember) && typeof data != "string")
+			throw new Error("Dato inválido");
+		if(typeof data == "string") data = { id: data };
+
+		if(this._banneds.has(data.id)) {
+			await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET banneds = ? WHERE channel = ?`, [...this._banneds].deleteElement(data.id).join(";"), this.id);
+			if(data.id != this.owner.id) await this.channel.permissionOverwrites.delete(data.id);
+			this._banneds.delete(data.id);
+		}
+	}
+	async setBanneds(data, reload=true) {
+		if(!Array.isArray(data))
+			throw new Error(`El valor debe ser un array`);	
+		data = [...new Set(data)];
+		data.deleteElement(this.owner.id);
+		data.deleteElement(this.guild.id);
+		await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET banneds = ? WHERE channel = ?`, data.join(";"), this.id);
+		this._banneds.clear(); for(const e of data) this._banneds.add(e);
+		if(reload) await this.reloadPerms();
+	}
+
+
+	// Funciones varias
+	async shouldbeDeleted() {
+		if(this.temp && this.count == 0)
+			await this.delete();
+	}
+
+	async clear() {
+		await this.setMods([], false);
+		await this.setMembers([], false);
+		await this.setBanneds([], false);
+		await this.reloadPerms();
+	}
+
+	async delete(discDelete = true) {
 		await this._idbd.execute(`DELETE FROM ${GestorCanales._tableName_channels} WHERE channel = ?;`, this.id);
-		await this.channel.delete();
+		this.debug(`Canal(${this.id}) del guild(${this.guild.id}) eliminado`);
 		this._parent.list.delete(this.id);
+		if(discDelete) await this.channel.delete();
 		return this;
+	}
+
+	async reloadPerms() {
+		const perms = [
+			{ id: this.guild.id, 	 ...GestorCanales._permsAllowDeny(this.type, CRol.NONE, this.visible) },
+			{ id: this.owner.id, 	 ...GestorCanales._permsAllowDeny(this.type, CRol.OWNER) },
+		];
+		for (const userID of this.mods)
+			if(await this.guild.members.fetch(userID).then(() => true).catch(() => false))
+				perms.push({ id: userID, ...GestorCanales._permsAllowDeny(this.type, CRol.MOD) });
+		for (const userID of this.members)
+			if(await this.guild.members.fetch(userID).then(() => true).catch(() => false))
+				perms.push({ id: userID, ...GestorCanales._permsAllowDeny(this.type, CRol.MEMBER) });
+		for (const userID of this.banneds)
+			if(await this.guild.members.fetch(userID).then(() => true).catch(() => false))
+				perms.push({ id: userID, ...GestorCanales._permsAllowDeny(this.type, CRol.BANNED) });
+		await this.channel.permissionOverwrites.set(perms);
+	}
+
+	/**
+	 * Devuelve el número de rol que un usuario tiene
+	 * en el canal.
+	 * 
+	 * @param {int} userID ID de usuario
+	 * @return -1: no rank
+	 *          0: owner
+	 *          1: mod
+	 *          2: member
+	 *          3: banned
+	 */
+	getUserRol(userID) {
+		if(this.guild.id == userID)
+			return CRol.NONE;
+		if(this.owner.id == userID)
+			return CRol.OWNER;
+		if(this.mods.has(userID))
+			return CRol.MOD;
+		if(this.members.has(userID))
+			return CRol.MEMBER;
+		if(this.banneds.has(userID))
+			return CRol.BANNED;
+		return -1;
+	}
+
+	async updateUserPerm(userID) {
+		if(userID != this.guild.id && await this.guild.members.fetch(userID).then(() => false).catch(() => true))
+			return;
+		const userRol = this.getUserRol(userID);
+		if(userRol == -1)
+			return await this.channel.permissionOverwrites.delete(userID);
+		const perms = RolPerms[this.type][CRol.getKeyByValue(userRol)].clone();
+		if(userRol == CRol.NONE)
+			perms.ViewChannel = this.visible ? null : false;
+		await this.channel.permissionOverwrites.edit(userID, perms);
+	}
+
+	embed() {
+		return GestorCanales._getEmbedInfoChannel(this);
+	}
+	async embedMods() {
+		return GestorCanales._getEmbedInfoChannelMods(this);
+	}
+	async embedMembers() {
+		return GestorCanales._getEmbedInfoChannelMembers(this);
+	}
+	async embedBanneds() {
+		return GestorCanales._getEmbedInfoChannelBanneds(this);
+	}
+
+	toJSON() {
+		return {
+			guild: this.guild.id,
+			channel: this.id,
+			created: this.created,
+			temp: this.temp,
+			name: this.name,
+			owner: this.owner.id,
+			type: this.type,
+			mods: [...this.mods],
+			members: [...this.members],
+			banneds: [...this.banneds],
+			antiadmin: this.antiadmin,
+			antibots: this.antibots,
+			visible: this.visible,
+			onlycam: this.onlycam,
+			count: this.count,
+		}
 	}
 }
 

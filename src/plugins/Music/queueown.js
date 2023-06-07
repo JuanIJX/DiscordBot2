@@ -71,8 +71,6 @@ export default class Queue extends GuildQueue {
 			await wait(500);
 			queue.setRepeatMode(1);
 		}*/
-
-		//console.log(this.isPlaying);
 		
 		if(this.isPlaying()) {
 			this.node.setPaused(false);
@@ -85,21 +83,21 @@ export default class Queue extends GuildQueue {
 	async replay(trackPosition) {
 		const track = this.history.tracks.at(trackPosition);
 		if(track) {
-			this.node.insert(track, 0);
-			if(this.isPlaying())
-				this.skip();
-			else
-				await this.node.play(); // Probar cuando no este conectado en un canal
+			//this.node.insert(track, 0); // Inserta al principio
+			this.addTrack(track); // Inserta al final
+
+			if(!this.isPlaying() && this.inChannel())
+				await this.node.play();
 			return track;
 		}
 		return null;
 	}
 
-	jump(trackPosition) {
+	async jump(trackPosition) {
 		const removed = this.node.remove(this.tracks.at(trackPosition));
         if (!removed) return null;
         this.tracks.store.unshift(removed);
-        this.skip();
+        await this.skip();
 		return removed;
 	}
 

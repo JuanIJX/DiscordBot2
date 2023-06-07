@@ -4,7 +4,7 @@ import { EOL } from "os";
 import 'dotenv/config'
 import fs from "fs"
 import path from "path";
-import { Collection, Events } from "discord.js"
+import { Collection, Events, PermissionFlagsBits } from "discord.js"
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const PackageJson = require("../../package.json");
@@ -35,8 +35,8 @@ export default class Main {
 
 	static async init() {
 		if(this.instance == null) {
-			this.instance = new this();
 			try {
+				this.instance = new this();
 				await this.instance.asyncInit();
 			}
 			catch (error) {
@@ -65,9 +65,7 @@ export default class Main {
 		//  ** FAST SETTINGS **
 		this._readCommandLineArgs();
 
-		this.discordManager.discord.on(Events.MessageCreate, e => this._commandManager.handler(e));
-		this.discordManager.discord.on(Events.InteractionCreate, e => this._slashManager.handler(e));
-
+		// Log config
 		if(this._config.debug)
 			this._logger
 				.addLevelConsole(Level.DEBUG | Level.HIST)
@@ -80,22 +78,50 @@ export default class Main {
 			``,
 		]);
 
+		// Console config
 		KeyB.onClose(async () => { await this._stop(); });
 		KeyB.bucle((cadena, cmdName, args) => {
 			this._logger.log(Level.HIST, "CONSOLE", cadena);
 			commands.bind(this)(cadena, cmdName, args);
 		});
 		this.log(Level.DEBUG, "Iniciado escucha de comandos de consola");
+
+		// Discord config
+		this.discordManager.discord.on(Events, error => this.discordManager.log(Level.ERROR, error));
+		this.discordManager.discord.on(Events.GuildCreate, async guild => {
+			this.discordManager.log(Level.INFO, `Entre en el servidor '${guild.name}' g(${guild.id})`);
+			if(!guild.members.me.permissions.has(PermissionFlagsBits.Administrator)) {
+				this.discordManager.log(Level.WARN, `g(${guild.id}) sin permisos de administrador, saliendo...`);
+				await guild.leave();
+			}
+		});
+		this.discordManager.discord.on(Events.GuildRoleUpdate, async (_, roleNew) => {
+			if(!roleNew.guild.members.me.permissions.has(PermissionFlagsBits.Administrator)) {
+				this.discordManager.log(Level.WARN, `g(${roleNew.guild.id}) sin permisos de administrador, saliendo...`);
+				await roleNew.guild.leave();
+			}
+		});
+		this.discordManager.discord.on(Events.GuildDelete, guild => this.discordManager.log(Level.INFO, `Salí del servidor '${guild.name}' g(${guild.id})`));
+		this.discordManager.discord.on(Events.MessageCreate, e => this._commandManager.handler(e));
+		this.discordManager.discord.on(Events.InteractionCreate, e => this._slashManager.handler(e));
 	}
 
+	//  ** SLOW SETTINGS **
 	async asyncInit() {
-		//  ** SLOW SETTINGS **
+		// Start bot
 		await this.discordManager.start();
+		// Leave the guilds that I dont have admin permissions
+		for (const guild of await this.discordManager.discord.guilds.fetch())
+			if(!guild[1].permissions.has(PermissionFlagsBits.Administrator))
+				await (await guild[1].fetch()).leave();
+		// Clear slashCommands if config says so
 		if(this._config.clearCmds)
 			await this.discordManager.clearCommands();
+		// Load slash plugins commands
 		await this.slashManager.load(this.discordManager.discord.application.commands);
 		await this._loadModules();
 		await this._startModules();
+		// Tests on load app
 		await inload.bind(this)();
 
 		this.log(Level.INFO, "Done!");

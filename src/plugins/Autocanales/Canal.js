@@ -45,8 +45,8 @@ export const RolPerms = [
 
 			MoveMembers: null,
 			ModerateMembers: true,
-			ManageMessages: false,
-			ManageChannels: false,
+			ManageMessages: null,
+			ManageChannels: null,
 		},
 		MEMBER: {
 			ViewChannel: true,
@@ -334,12 +334,14 @@ export default class GestorCanales {
 		const perms = RolPerms[type][CRol.getKeyByValue(cRol)];
 		const ret = { allow: [], deny: [] }
 		for (const key in perms) {
-			if(perms[key] === null)
-				continue;
+			if(perms[key] === null) continue;
 			ret[perms[key] === true ? 'allow' : 'deny'].push(PermissionFlagsBits[key]);
 		}
-		if(visible===false && cRol==CRol.NONE )
-			ret.deny.push(PermissionFlagsBits.ViewChannel);
+		if(visible===false)
+			if(
+				(type == Type.PUBLIC && cRol == CRol.BANNED) ||
+				(type > Type.PUBLIC && cRol == CRol.NONE)
+			) ret.deny.push(PermissionFlagsBits.ViewChannel);
 		return ret;
 	};
 	static _getEmbedHelp = cmdname => {
@@ -420,7 +422,7 @@ export default class GestorCanales {
 					inline: true
 				},
 				//{ name: '\u200b', value: '\u200b', inline: true },
-				{ name: 'Tipo', value: this._emojis[canal.type], inline: true },
+				{ name: 'Tipo', value: `[${canal.type}] ${this._emojis[canal.type]}`, inline: true },
 				{ name: 'Temporal', value: canal.temp ? '🕥' : '🤚', inline: true },
 				{ name: 'Visible', value: canal.visible ? '👀' : '🟠', inline: true },
 				{ name: 'Onlycam', value: canal.onlycam ? '📸' : '🟠', inline: true },
@@ -440,7 +442,7 @@ export default class GestorCanales {
 		);
 		return {
 			title: `${canal.name}`,
-			description: `**Moderadores (${list.length})**\n` + (list > 0 ? list.join("\n") : `Vacío`)
+			description: `**Moderadores (${list.length})**\n` + (list.length > 0 ? list.join("\n") : `Vacío`)
 		};
 	}
 	static _getEmbedInfoChannelMembers = async canal => {
@@ -454,7 +456,7 @@ export default class GestorCanales {
 		);
 		return {
 			title: `${canal.name}`,
-			description: `**Miembros (${list.length})**\n` + (list > 0 ? list.join("\n") : `Vacío`)
+			description: `**Miembros (${list.length})**\n` + (list.length > 0 ? list.join("\n") : `Vacío`)
 		};
 	}
 	static _getEmbedInfoChannelBanneds = async canal => {
@@ -468,7 +470,7 @@ export default class GestorCanales {
 		);
 		return {
 			title: `${canal.name}`,
-			description: `**Baneados (${list.length})**\n` + (list > 0 ? list.join("\n") : `Vacío`)
+			description: `**Baneados (${list.length})**\n` + (list.length > 0 ? list.join("\n") : `Vacío`)
 		};
 	}
 	
@@ -1204,7 +1206,8 @@ class Canal {
 			throw new Error(`Se debe proporcionar true o false`);
 		await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET visible = ? WHERE channel = ?`, data, this.id);
 		this._visible = data;
-		await this.updateUserPerm(this.guild.id);
+		//await this.updateUserPerm(this.guild.id); se deben actualizar todos los baneados
+		await this.reloadPerms();
 	}
 	async setOnlycam(data) {
 		if(typeof data != "boolean")
@@ -1224,22 +1227,22 @@ class Canal {
 		if(data.id == this.guild.id)
 			throw new Error(`No se puede añadir esta ID`);
 
-		await this.delMember(data.id);
-		await this.delBanned(data.id);
+		await this.delMember(data.id, false);
+		await this.delBanned(data.id, false);
 		if(!this._mods.has(data.id)) {
 			await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET mods = ? WHERE channel = ?`, [...this._mods, data.id].join(";"), this.id);
 			this._mods.add(data.id);
 			await this.updateUserPerm(data.id);
 		}
 	}
-	async delMod(data) {
+	async delMod(data, updateChannel=true) {
 		if(!(data instanceof User) && !(data instanceof GuildMember) && typeof data != "string")
 			throw new Error("Dato inválido");
 		if(typeof data == "string") data = { id: data };
 
 		if(this._mods.has(data.id)) {
 			await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET mods = ? WHERE channel = ?`, [...this._mods].deleteElement(data.id).join(";"), this.id);
-			if(data.id != this.owner.id) await this.channel.permissionOverwrites.delete(data.id);
+			if(updateChannel && data.id != this.owner.id && data.id != this.guild.id) await this.channel.permissionOverwrites.delete(data.id);
 			this._mods.delete(data.id);
 		}
 	}
@@ -1265,22 +1268,22 @@ class Canal {
 		if(data.id == this.guild.id)
 			throw new Error(`No se puede añadir esta ID`);
 
-		await this.delMod(data.id);
-		await this.delBanned(data.id);
+		await this.delMod(data.id, false);
+		await this.delBanned(data.id, false);
 		if(!this._members.has(data.id)) {
 			await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET members = ? WHERE channel = ?`, [...this._members, data.id].join(";"), this.id);
 			this._members.add(data.id);
 			await this.updateUserPerm(data.id);
 		}
 	}
-	async delMember(data) {
+	async delMember(data, updateChannel=true) {
 		if(!(data instanceof User) && !(data instanceof GuildMember) && typeof data != "string")
 			throw new Error("Dato inválido");
 		if(typeof data == "string") data = { id: data };
 
 		if(this._members.has(data.id)) {
 			await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET members = ? WHERE channel = ?`, [...this._members].deleteElement(data.id).join(";"), this.id);
-			if(data.id != this.owner.id) await this.channel.permissionOverwrites.delete(data.id);
+			if(updateChannel && data.id != this.owner.id && data.id != this.guild.id) await this.channel.permissionOverwrites.delete(data.id);
 			this._members.delete(data.id);
 		}
 	}
@@ -1305,22 +1308,22 @@ class Canal {
 		if(data.id == this.guild.id)
 			throw new Error(`No se puede añadir esta ID`);
 
-		await this.delMod(data.id);
-		await this.delMember(data.id);
+		await this.delMod(data.id, false);
+		await this.delMember(data.id, false);
 		if(!this._banneds.has(data.id)) {
 			await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET banneds = ? WHERE channel = ?`, [...this._banneds, data.id].join(";"), this.id);
 			this._banneds.add(data.id);
 			await this.updateUserPerm(data.id);
 		}
 	}
-	async delBanned(data) {
+	async delBanned(data, updateChannel=true) {
 		if(!(data instanceof User) && !(data instanceof GuildMember) && typeof data != "string")
 			throw new Error("Dato inválido");
 		if(typeof data == "string") data = { id: data };
 
 		if(this._banneds.has(data.id)) {
 			await this._idbd.execute(`UPDATE ${GestorCanales._tableName_channels} SET banneds = ? WHERE channel = ?`, [...this._banneds].deleteElement(data.id).join(";"), this.id);
-			if(data.id != this.owner.id) await this.channel.permissionOverwrites.delete(data.id);
+			if(updateChannel && data.id != this.owner.id && data.id != this.guild.id) await this.channel.permissionOverwrites.delete(data.id);
 			this._banneds.delete(data.id);
 		}
 	}
@@ -1360,17 +1363,17 @@ class Canal {
 	async reloadPerms() {
 		const perms = [
 			{ id: this.guild.id, 	 ...GestorCanales._permsAllowDeny(this.type, CRol.NONE, this.visible) },
-			{ id: this.owner.id, 	 ...GestorCanales._permsAllowDeny(this.type, CRol.OWNER) },
+			{ id: this.owner.id, 	 ...GestorCanales._permsAllowDeny(this.type, CRol.OWNER, true) },
 		];
 		for (const userID of this.mods)
 			if(await this.guild.members.fetch(userID).then(() => true).catch(() => false))
-				perms.push({ id: userID, ...GestorCanales._permsAllowDeny(this.type, CRol.MOD) });
+				perms.push({ id: userID, ...GestorCanales._permsAllowDeny(this.type, CRol.MOD, this.visible) });
 		for (const userID of this.members)
 			if(await this.guild.members.fetch(userID).then(() => true).catch(() => false))
-				perms.push({ id: userID, ...GestorCanales._permsAllowDeny(this.type, CRol.MEMBER) });
+				perms.push({ id: userID, ...GestorCanales._permsAllowDeny(this.type, CRol.MEMBER, this.visible) });
 		for (const userID of this.banneds)
 			if(await this.guild.members.fetch(userID).then(() => true).catch(() => false))
-				perms.push({ id: userID, ...GestorCanales._permsAllowDeny(this.type, CRol.BANNED) });
+				perms.push({ id: userID, ...GestorCanales._permsAllowDeny(this.type, CRol.BANNED, this.visible) });
 		await this.channel.permissionOverwrites.set(perms);
 	}
 
@@ -1406,8 +1409,11 @@ class Canal {
 		if(userRol == -1)
 			return await this.channel.permissionOverwrites.delete(userID);
 		const perms = RolPerms[this.type][CRol.getKeyByValue(userRol)].clone();
-		if(userRol == CRol.NONE)
-			perms.ViewChannel = this.visible ? null : false;
+		if(!this.visible)
+			if(
+				(this.type == Type.PUBLIC && userRol == CRol.BANNED) ||
+				(this.type > Type.PUBLIC && userRol == CRol.NONE)
+			) perms.ViewChannel = false;
 		await this.channel.permissionOverwrites.edit(userID, perms);
 	}
 

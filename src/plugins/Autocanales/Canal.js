@@ -655,10 +655,10 @@ export default class GestorCanales {
 			this._channelChangeName(channelNew);
 	}
 	guildMemberRemove(member) {
-
+		_guildMemberRemove(member);
 	}
 	guildDelete(guild) {
-
+		_guildDelete(guild);
 	}
 
 
@@ -668,7 +668,7 @@ export default class GestorCanales {
 			const guildCanal = this.list.get(channel.guild.id);
 			if(guildCanal.voice.id === channel.id) {
 				try {
-					var canal = guildCanal.list.find(c => c.owner.id == member.user.id);
+					let canal = guildCanal.list.find(c => c.owner.id == member.user.id);
 					if(!canal)
 						canal = await guildCanal.createCanal(member);
 						this.hist(`g(${guildCanal.id}) c(${canal.id}) canal creado por ${member.user.tag}(${member.id}) para si mismo`);
@@ -759,6 +759,18 @@ export default class GestorCanales {
 	}
 
 	async guildDelete(guild) {
+		if(this.list.has(guild.id))
+			await this.list.get(guild.id).delete(false);
+	}
+
+	async _guildMemberRemove(member) {
+		if(this.list.has(member.guild.id))
+			await this.list.get(member.guild.id).list
+				.filter(canal => canal.owner.id == member.id)
+				.forEachAsync(async canal => canal.delete());
+	}
+
+	async _guildDelete(guild) {
 		if(this.list.has(guild.id))
 			await this.list.get(guild.id).delete(false);
 	}
@@ -870,7 +882,7 @@ class GuildCanal {
 			this._default_visible ? 1 : 0,
 			this._default_onlycam ? 1 : 0,
 		]);
-		this.debug(`Guild(${this.id}) cargado por primera vez`);
+		this.debug(`Guild(${this.id}) BD creada`);
 		return this;
 	}
 

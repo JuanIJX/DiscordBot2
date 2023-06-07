@@ -150,7 +150,7 @@ export default async function(message, cmdName, args) {
 				if(aux1 < 1 || aux1 > queue.tracks.size)
 					await message.reply(`Índice no válida`);
 				else {
-					aux2 = queue.jump(aux1-1);
+					aux2 = await queue.jump(aux1-1);
 					await message.reply(`Skip a ${aux1}`);
 					this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) saltó a la canción '${aux2.title}'`);
 				}
@@ -162,7 +162,7 @@ export default async function(message, cmdName, args) {
 			else {
 				aux1 = (args.length > 1 && isInteger(args[1])) ? parseInt(args[1]) : 1;
 				if(aux1 < 1 || aux1 > queue.history.size)
-					await message.reply(`Índice no válida`);
+					await message.reply(`Índice no válido`);
 				else {
 					aux2 = await queue.replay(aux1-1);
 					if(!aux2)

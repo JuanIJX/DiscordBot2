@@ -669,9 +669,10 @@ export default class GestorCanales {
 			if(guildCanal.voice.id === channel.id) {
 				try {
 					let canal = guildCanal.list.find(c => c.owner.id == member.user.id);
-					if(!canal)
+					if(!canal) {
 						canal = await guildCanal.createCanal(member);
 						this.hist(`g(${guildCanal.id}) c(${canal.id}) canal creado por ${member.user.tag}(${member.id}) para si mismo`);
+					}
 					try {
 						await member.voice.setChannel(canal?.channel);
 					} catch (error) {

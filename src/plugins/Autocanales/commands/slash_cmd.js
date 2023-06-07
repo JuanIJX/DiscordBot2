@@ -607,8 +607,8 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 
 							// Procesamiento
 							aux_1 = [...canal.members];
-							hist(`g(${guild.id}) c(${canal.id}) miembros vaciados por ${member.user.tag}(${member.id})`);
 							await canal.setMembers([]);
+							hist(`g(${guild.id}) c(${canal.id}) miembros vaciados por ${member.user.tag}(${member.id})`);
 							return [
 								`**Eliminados ${aux_1.length} miembros**`,
 								...await aux_1.mapAsync(async id => await guild.members.fetch(id)
@@ -758,7 +758,7 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 							) return `No tienes permisos`;
 
 							// Procesamiento
-							aux_1 = [...canal.mods];
+							aux_1 = [...canal.banneds];
 							await canal.setBanneds([]);
 							hist(`g(${guild.id}) c(${canal.id}) todos desbaneados por ${member.user.tag}(${member.id})`);
 							return [

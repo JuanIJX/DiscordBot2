@@ -151,7 +151,7 @@ export default async function(message, cmdName, args) {
 					await message.reply(`Índice no válida`);
 				else {
 					aux2 = await queue.jump(aux1-1);
-					await message.reply(`Skip a ${aux1}`);
+					await message.reply(`Skip a ${aux2.title}`);
 					this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) saltó a la canción '${aux2.title}'`);
 				}
 			}

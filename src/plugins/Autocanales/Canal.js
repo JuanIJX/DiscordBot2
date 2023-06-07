@@ -491,6 +491,7 @@ export default class GestorCanales {
 	//
 	debug(msg) { this._plugin.log(Level.DEBUG, msg); }
 	error(msg) { this._plugin.log(Level.ERROR, msg); }
+	hist(msg) { this._plugin.log(Level.HIST, msg); }
 
 	/**
 	 * Carga de los gestores de cada servidor
@@ -668,6 +669,7 @@ export default class GestorCanales {
 					var canal = guildCanal.list.find(c => c.owner.id == member.user.id);
 					if(!canal)
 						canal = await guildCanal.createCanal(member);
+						this.hist(`g(${guildCanal.id}) c(${canal.id}) canal creado por ${member.user.tag}(${member.id}) para si mismo`);
 					try {
 						await member.voice.setChannel(canal?.channel);
 					} catch (error) {
@@ -697,21 +699,27 @@ export default class GestorCanales {
 				switch (this.constructor._emojis.getKeyByValue(reaction.emoji.name)) {
 					case "0": // Lock 1
 						await canal.setType(Type.PUBLIC);
+						this.hist(`g(${guildCanal.id}) c(${canal.id}) cambiado a tipo ${canal.type} por ${user.tag}(${user.id})`);
 						break;
 					case "1": // Lock 2
 						await canal.setType(Type.PRIVATE);
+						this.hist(`g(${guildCanal.id}) c(${canal.id}) cambiado a tipo ${canal.type} por ${user.tag}(${user.id})`);
 						break;
 					case "2": // Lock 3
 						await canal.setType(Type.SECRET);
+						this.hist(`g(${guildCanal.id}) c(${canal.id}) cambiado a tipo ${canal.type} por ${user.tag}(${user.id})`);
 						break;
 					case "3": // Lock 4
 						await canal.setType(Type.CLOSED);
+						this.hist(`g(${guildCanal.id}) c(${canal.id}) cambiado a tipo ${canal.type} por ${user.tag}(${user.id})`);
 						break;
 					case "4": // Visible
 						await canal.setVisible(true);
+						this.hist(`g(${guildCanal.id}) c(${canal.id}) cambiado a visible por ${user.tag}(${user.id})`);
 						break;
 					case "5": // Invisible
 						await canal.setVisible(false);
+						this.hist(`g(${guildCanal.id}) c(${canal.id}) cambiado a invisible por ${user.tag}(${user.id})`);
 						break;
 				}
 			}

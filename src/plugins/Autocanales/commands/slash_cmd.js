@@ -210,7 +210,7 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 			if (guild.ownerId != user.id && !this.isAdmin(user.id))
 				return `No tienes permisos`;
 			if(guildCanal == null)
-				return `El servidor no tiene asignado ningún Autocanal`;
+				return `El servidor no tiene habilitado Autocanal`;
 			if(! await guildCanal.delete())
 				return `Error al eliminar, autocanales desconectado de este servidor`;
 
@@ -221,7 +221,7 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 			if (guild.ownerId != user.id && !this.isAdmin(user.id))
 				return `No tienes permisos`;
 			if(guildCanal == null)
-				return `El servidor no tiene asignado ningún Autocanal`;
+				return `El servidor no tiene habilitado Autocanal`;
 			/*if(guildCanal.getCountCanales(user.id) > 0)
 				return `Ya tienes un canal creado`;*/
 
@@ -232,7 +232,7 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 			return `Canal de ${aux_1.displayName} creado`;
 		case "my":
 			if(guildCanal == null)
-				return `El servidor no tiene asignado ningún Autocanal`;
+				return `El servidor no tiene habilitado Autocanal`;
 			if(!guildCanal.list.has(channel.id))
 				return `No se reconoce el canal`;
 			const canal = guildCanal.list.get(channel.id);

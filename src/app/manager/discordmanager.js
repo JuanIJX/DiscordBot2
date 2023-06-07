@@ -1,5 +1,5 @@
 import { getVoiceConnection } from "@discordjs/voice";
-import { Client, Collection, Events, Message } from "discord.js"
+import { Client, Collection, Message } from "discord.js"
 import { Level } from "../../libraries/logger.js";
 import intents from "../settings/intents.js"
 import partials from "../settings/partials.js"
@@ -48,13 +48,8 @@ export default class DiscordManager {
 		Object.defineProperty(this, '_logger', { value: logger });
 		Object.defineProperty(this, '_token', { value: token });
 		Object.defineProperty(this, '_started', { value: null, writable: true });
+		Object.defineProperty(this, "_timer", { value: { _destroyed: true }, writable: true });
 		Object.defineProperty(this, 'discord', { value: new Client({ intents, partials, disableMentions: 'everyone' }), enumerable: true });
-
-		// Settings
-		this.discord.on("error", error => {
-			this.log(Level.ERROR, error.message);
-			this.log(Level.DEBUG, error.stack);
-		});
 	}
 
 	log(level, msg) { this._logger.log(level, "D-BOT", msg); }
@@ -63,10 +58,25 @@ export default class DiscordManager {
 	get started() { return this._started === true; }
 
 	async _waitReady() {
-		return new Promise(resolve => {this.discord.once('ready', () => {
-			this.log(Level.DEBUG, "Ready!");
-			resolve();
-		})});
+		return new Promise(resolve => {
+			this._timer = setTimeout(() => {
+				if(this.discord.isReady()) {
+					this.log(Level.WARN, `Acabó conectado`);
+					resolve();
+				}
+				else {
+					this.log(Level.FATAL, `No se pudo conectar`);
+					process.exit(1);
+				}
+			}, 10000);
+
+			this.discord.once('ready', () => {
+				if(this._timer._destroyed === false)
+					clearTimeout(this._timer);
+				this.log(Level.DEBUG, "Ready!");
+				resolve();
+			})
+		});
 	}
 
 	async start() {
@@ -77,9 +87,6 @@ export default class DiscordManager {
 			await this._waitReady();
 			this._started = true;
 			this.log(Level.INFO, "Bot de discord conectado");
-
-			this.discord.on(Events.GuildCreate, guild => this.log(Level.INFO, `Entre en el servidor '${guild.name}' g(${guild.id})`));
-			this.discord.on(Events.GuildDelete, guild => this.log(Level.INFO, `Salí del servidor '${guild.name}' g(${guild.id})`));
 		}
 	}
 

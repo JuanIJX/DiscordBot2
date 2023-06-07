@@ -81,7 +81,10 @@ export default class Main {
 		]);
 
 		KeyB.onClose(async () => { await this._stop(); });
-		KeyB.bucle(commands.bind(this));
+		KeyB.bucle((cadena, cmdName, args) => {
+			this._logger.log(Level.HIST, "CONSOLE", cadena);
+			commands.bind(this)(cadena, cmdName, args);
+		});
 		this.log(Level.DEBUG, "Iniciado escucha de comandos de consola");
 	}
 

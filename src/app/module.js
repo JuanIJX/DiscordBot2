@@ -17,8 +17,8 @@ export default class Module {
 						.getFileName()
 				)
 			)
-		) });
-		Object.defineProperty(this, '_started', { value: false, writable: true });
+		), enumerable: true });
+		Object.defineProperty(this, '_started', { value: false, writable: true, enumerable: true });
 		Object.defineProperty(this, 'color', { value: 0xffffff, writable: true, enumerable: true });
 	}
 
@@ -44,11 +44,11 @@ export default class Module {
 	async _load() {
 		if(this._loaded === true)
 			return;
-		Object.defineProperty(this, '_loaded', { value: true });
+		Object.defineProperty(this, '_loaded', { value: true, enumerable: true });
 		Object.defineProperty(this, '_commandManager', { value: this._main.commandManager });
 		Object.defineProperty(this, '_slashManager', { value: this._main.slashManager });
-		Object.defineProperty(this, '_eventManager', { value: this._main.eventManager, enumerable: true });
-		Object.defineProperty(this, 'discordManager', { value: this._main.discordManager, enumerable: true });
+		Object.defineProperty(this, '_eventManager', { value: this._main.eventManager });
+		Object.defineProperty(this, 'discordManager', { value: this._main.discordManager });
 		Object.defineProperty(this, 'configManager', { value: new ConfigManager(this._path), enumerable: true });
 
 		await this.onLoad();

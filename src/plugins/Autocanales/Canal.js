@@ -379,7 +379,7 @@ export default class GestorCanales {
 				},
 				{
 					name: `${cmdname} my temp`,
-					value: `Cambia el canal a temporal`
+					value: `Cambia el canal a temporal o permanente`
 				},
 				{
 					name: `${cmdname} my antiadmin`,

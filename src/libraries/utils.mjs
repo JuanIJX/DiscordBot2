@@ -1,5 +1,5 @@
 /**
- * Last modified: 16/05/2023
+ * Last modified: 08/06/2023
  */
 
 import fs from "fs"
@@ -366,7 +366,7 @@ export function stringifyNoCircular(obj, space=null) {
 export function createDirs(src) {
 	if(!fs.existsSync(src)) {
 		var totalpath = ".";
-		for(const dir of src.split("\\")) {
+		for(const dir of src.split(path.sep)) {
 			totalpath = path.join(totalpath, dir);
 			if(!fs.existsSync(totalpath))
 				fs.mkdirSync(totalpath);

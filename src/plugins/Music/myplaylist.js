@@ -212,6 +212,7 @@ export class UserPlaylist {
 			}
 		}
 		else {
+			console.log(path.dirname(this._file));
 			createDirs(path.dirname(this._file));
 			await this._data.connect([`PRAGMA foreign_keys = ON;`]);
 			await this._data.execute(PlaylistManager._table_playlists);

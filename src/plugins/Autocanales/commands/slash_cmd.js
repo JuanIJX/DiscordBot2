@@ -231,10 +231,12 @@ async function _execute(interaction, user, member, channel, guild, ops, guildCan
 			hist(`g(${guild.id}) c(${aux_2.id}) canal creado por ${member.user.tag}(${member.id}) para ${aux_1.user.tag}(${aux_1.id})`);
 			return `Canal de ${aux_1.displayName} creado`;
 		case "my":
-			if(guildCanal == null)
-				return `El servidor no tiene habilitado Autocanal`;
-			if(!guildCanal.list.has(channel.id))
-				return `No se reconoce el canal`;
+			if(guildCanal == null) {
+				await interaction.reply(`El servidor no tiene habilitado Autocanal`); return;
+			}
+			if(!guildCanal.list.has(channel.id)) {
+				await interaction.reply(`No se reconoce el canal`); return;
+			}
 			const canal = guildCanal.list.get(channel.id);
 
 			switch (ops.getSubcommand(false)) {

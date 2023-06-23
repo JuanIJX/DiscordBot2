@@ -78,6 +78,8 @@ export default async function (message, cmdName, args) {
 				}
 				
 				let channel_destino = await message.guild.fetch(args[0]).catch(() => null);
+				console.log(channel_destino);
+				return;
 				if(channel_destino === null)
 					await message.tempReply("Canal introducido inválido", delay);
 				else if (channel_destino.type != ChannelType.GuildVoice) {

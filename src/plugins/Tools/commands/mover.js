@@ -34,7 +34,7 @@ export default async function (message, cmdName, args) {
 	let delay = 4000;
 
 	if (!message.member.permissions.has(PermissionFlagsBits.MoveMembers)) {
-		message.tempReply("No tienes permiso para usar el comando", delay);
+		await message.tempReply("No tienes permiso para usar el comando", delay);
 		return;
 	}
 
@@ -47,24 +47,24 @@ export default async function (message, cmdName, args) {
 		case "h":
 		case "here":
 			if(args.length <= 1)
-				message.tempReply("Debes estar en un canal de voz", delay);
+				await message.tempReply("Debes estar en un canal de voz", delay);
 			else {
 				let channel_destino = message.member.voice.channel;
 				if(channel_destino === null) {
-					message.tempReply("Debes estar en un canal de voz", delay);
+					await message.tempReply("Debes estar en un canal de voz", delay);
 					return;
 				}
 
 				let channel_origen = await message.guild.fetch(args[1]).catch(() => null);
 				if(channel_origen === null)
-					message.tempReply("Canal introducido inválido", delay);
+					await message.tempReply("Canal introducido inválido", delay);
 				else if (channel_origen.type != ChannelType.GuildVoice)
-					message.tempReply("El canal introducido debe ser de voz", delay);
+					await message.tempReply("El canal introducido debe ser de voz", delay);
 				else if (channel_origen.id == channel_destino.id)
-					message.tempReply("El canal de origen no puede ser el mismo que el destino", delay);
+					await message.tempReply("El canal de origen no puede ser el mismo que el destino", delay);
 				else {
 					let moved = await mover(channel_origen, channel_destino);
-					message.tempReply(`Movidos: ${moved}`, delay);
+					await message.tempReply(`Movidos: ${moved}`, delay);
 					this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) movió a ${moved} usuarios del canal ${channel_origen.name}(${channel_origen.id}) al canal ${channel_destino.name}(${channel_destino.id})`);
 				}
 			}
@@ -73,20 +73,23 @@ export default async function (message, cmdName, args) {
 			if(args.length <= 1) {
 				let channel_origen = message.member.voice.channel;
 				if(channel_origen === null) {
-					message.tempReply("Debes estar en un canal de voz", delay);
+					await message.tempReply("Debes estar en un canal de voz", delay);
 					return;
 				}
 				
 				let channel_destino = await message.guild.fetch(args[0]).catch(() => null);
 				if(channel_destino === null)
-					message.tempReply("Canal introducido inválido", delay);
-				else if (channel_destino.type != ChannelType.GuildVoice)
-					message.tempReply("El canal introducido debe ser de voz", delay);
+					await message.tempReply("Canal introducido inválido", delay);
+				else if (channel_destino.type != ChannelType.GuildVoice) {
+					console.log(channel_destino.type);
+					console.log(ChannelType.GuildVoice);
+					await message.tempReply("El canal introducido debe ser de voz", delay);
+				}
 				else if (channel_origen.id == channel_destino.id)
-					message.tempReply("El canal de origen no puede ser el mismo que el destino", delay);
+					await message.tempReply("El canal de origen no puede ser el mismo que el destino", delay);
 				else {
 					let moved = await mover(channel_origen, channel_destino);
-					message.tempReply(`Movidos: ${moved}`, delay);
+					await message.tempReply(`Movidos: ${moved}`, delay);
 					this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) movió a ${moved} usuarios del canal ${channel_origen.name}(${channel_origen.id}) al canal ${channel_destino.name}(${channel_destino.id})`);
 				}
 			}
@@ -95,14 +98,14 @@ export default async function (message, cmdName, args) {
 				let channel_origen = await message.guild.fetch(args[1]).catch(() => null);
 				try {
 					if(channel_origen.id == channel_destino.id)
-						message.tempReply("El canal de origen no puede ser el mismo que el destino", delay);
+						await message.tempReply("El canal de origen no puede ser el mismo que el destino", delay);
 					else {
 						let moved = await mover(channel_origen, channel_destino);
-						message.tempReply(`Movidos: ${moved}`, delay);
+						await message.tempReply(`Movidos: ${moved}`, delay);
 						this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) movió a ${moved} usuarios del canal ${channel_origen.name}(${channel_origen.id}) al canal ${channel_destino.name}(${channel_destino.id})`);
 					}
 				} catch (error) {
-					message.tempReply(error.message, delay);
+					await message.tempReply(error.message, delay);
 				}
 			}
 			break;

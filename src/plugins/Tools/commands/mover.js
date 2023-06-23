@@ -81,7 +81,7 @@ export default async function (message, cmdName, args) {
 				if(channel_destino === null)
 					await message.tempReply("Canal introducido inválido", delay);
 				else if (channel_destino.type != ChannelType.GuildVoice) {
-					console.log(channel_destino.type);
+					console.log(channel_destino);
 					console.log(ChannelType.GuildVoice);
 					await message.tempReply("El canal introducido debe ser de voz", delay);
 				}

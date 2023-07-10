@@ -140,8 +140,9 @@ export default class Logger {
 	}
 
 	log(loglevel, invoker, msg) {
-		const loglevelName = Object.keys(Level).find(key => Level[key] === loglevel);
-		const date = this.constructor._getDate();
+		var loglevelName = Level.getKeyByValue(loglevel);
+		var date = this.constructor._getDate();
+
 		if(Array.isArray(msg)) {
 			for (const value of msg)
 				this._log(loglevel, invoker, value, date, loglevelName);

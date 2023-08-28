@@ -108,7 +108,6 @@ export class MyPlaylist {
 	}
 
 	async search(url, options={}) {
-		console.log("entramos aki jiji");
 		return await this._parent._manager._musicController.search(url, options);
 	}
 
@@ -244,7 +243,7 @@ export class UserPlaylist {
 	async remove(index) {
 		if(index >= 0 && index < this.size) {
 			const myPlaylist = this._lists[index];
-			console.log(`Eliminar: ${myPlaylist.id}`);
+			//console.log(`Eliminar: ${myPlaylist.id}`);
 			await this._data.execute(`DELETE FROM ${PlaylistManager._tableName_playlists} WHERE id = ?`, myPlaylist.id);
 			this._lists.splice(index, 1);
 			return myPlaylist;

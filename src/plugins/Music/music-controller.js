@@ -10,7 +10,7 @@ export default class MusicController {
 			ytdlOptions: { quality: "highestaudio", highWaterMark: 1 << 25 }
 		}), enumerable: true });
 		Object.defineProperty(this, "_config", { value: this.module.configManager.get("queue").content });
-		Object.defineProperty(this, "playlistManager", { value: new PlaylistManager(this.module.thisPath ) });
+		Object.defineProperty(this, "playlistManager", { value: new PlaylistManager(this) });
 	}
 
 	async load() {

@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path"
 import { createDirs, getDate } from "../../libraries/utils.mjs";
-import { Player, SearchResult, Track, Util } from "./DiscordPlayer.cjs"
+import { SearchResult, Track, Util } from "./DiscordPlayer.cjs"
 import { User } from "discord.js";
 import Sqlite from "../../libraries/SQL_sqlite3.js";
 
@@ -105,6 +105,11 @@ export class MyPlaylist {
 		if(!(searchResult instanceof SearchResult))
 			throw new Error("Se debe introducir un SearchResult");
 		return await this._add(searchResult.tracks);
+	}
+
+	async search(url, options={}) {
+		console.log("entramos aki jiji");
+		return await this._parent._manager._musicController.search(url, options);
 	}
 
 	async _getTracks(pos1, pos2, user) {
@@ -302,8 +307,9 @@ export default class PlaylistManager {
 		FOREIGN KEY (id_playlist) REFERENCES ${this._tableName_playlists}(id) ON DELETE CASCADE
 	);`;
 
-	constructor(pluginPath) {
-		Object.defineProperty(this, "_pluginPath", { value: pluginPath });
+	constructor(musicController) {
+		Object.defineProperty(this, "_musicController", { value: musicController });
+		Object.defineProperty(this, "_pluginPath", { value: musicController.module.thisPath });
 	}
 
 	/**

@@ -257,7 +257,7 @@ export default async function(message, cmdName, args) {
 				await message.reply(`No hay cola`);
 			else {
 				await queue.skip(channel);
-				await message.reply(`Skipped`);
+				await message.reply(`Skipped to '${queue.tracks.data[0]?.title ?? "LIST EMPTY"}'`);
 				this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) skipeó la canción`);
 			}
 			break;

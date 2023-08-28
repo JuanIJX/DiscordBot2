@@ -239,6 +239,7 @@ async function _exec(interaction, user, member, ops, channel, playlistManager, c
 							return `Se eliminaron del ${aux_1+1} al ${aux_2 < aux_4 ? aux_2+1 : aux_4} canciones (${aux_3.length})`;
 					}
 				case "play":
+					await interaction.deferReply({ ephemeral: true });
 					if(ops.getInteger("index") > userPlayList.size)
 						return `Index máximo: ${userPlayList.size}`
 					myPlaylist = userPlayList.at(ops.getInteger("index")-1);
@@ -272,7 +273,6 @@ async function _exec(interaction, user, member, ops, channel, playlistManager, c
 					if(queue.isPlaying())
 						return `Añadido a la cola`;
 
-					await interaction.deferReply({ ephemeral: true });
 					await queue.play(channel);
 					await interaction.followUp({ content: `Reproduciendo!`, ephemeral: true });
 					return;

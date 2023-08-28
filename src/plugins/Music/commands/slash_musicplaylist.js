@@ -214,8 +214,8 @@ async function _exec(interaction, user, member, ops, channel, playlistManager, c
 					if(aux_1.length == 0)
 						return `No se añadió ninguna canción`;
 					if(aux_1.length == 1)
-						return `Se añadió la canción '${aux_1[0].title}'`;
-					return `Se añadieron ${aux_1.length} canciones`;
+						return `Se añadió la canción '${aux_1[0].title}' a la lista '${myPlaylist.name}'`;
+					return `Se añadieron ${aux_1.length} canciones a la lista '${myPlaylist.name}'`;
 				case "remove":
 					if(ops.getInteger("index") > userPlayList.size)
 						return `Index máximo: ${userPlayList.size}`

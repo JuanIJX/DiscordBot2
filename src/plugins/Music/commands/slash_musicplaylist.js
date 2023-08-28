@@ -150,14 +150,14 @@ export default {
 		const playlistManager = this.musicController.playlistManager;
 		const cmdName = ops.getSubcommandGroup() ?? ops.getSubcommand(false);
 		const userPlayList = await playlistManager.get(user)
-		const exec = await _exec.bind(this)(user, member, ops, channel, playlistManager, cmdName, userPlayList);
+		const exec = await _exec.bind(this)(interaction, user, member, ops, channel, playlistManager, cmdName, userPlayList);
 		await userPlayList?.close();
 
 		return exec;
 	}
 }
 
-async function _exec(user, member, ops, channel, playlistManager, cmdName, userPlayList) {
+async function _exec(interaction, user, member, ops, channel, playlistManager, cmdName, userPlayList) {
 	let myPlaylist = null;
 	let queue = null;
 	let aux_1, aux_2, aux_3, aux_4;

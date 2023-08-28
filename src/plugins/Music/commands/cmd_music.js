@@ -271,7 +271,7 @@ export default async function(message, cmdName, args) {
 						await message.reply(`No se proporcionó una canción`);
 					else {
 						await queue.play(channel);
-						await message.reply(`Reproduciendo`);
+						await message.reply(`Reproduciendo '${queue.currentTrack.title}'`);
 					}
 				}
 				else {
@@ -287,7 +287,7 @@ export default async function(message, cmdName, args) {
 							}
 							else {
 								await queue.play(channel);
-								await message.reply(`Reproduciendo`);
+								await message.reply(`Reproduciendo '${queue.currentTrack.title}'`);
 							}
 							this.log(Level.HIST, `(g: ${message.guildId}) El usuario ${message.author.tag}(${message.author.id}) añadió ${searchResult.playlist ? `${searchResult.tracks.length} canciones` : `'${searchResult.tracks[0].title}'`}`);
 						} catch (error) {

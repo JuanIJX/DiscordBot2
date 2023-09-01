@@ -120,7 +120,7 @@ export default async function(cadena, cmdName, args) {
 									(vs.selfMute ? '😬' : '') +
 									(vs.selfVideo ? '📸' : '') +
 									(vs.streaming ? '📺' : '')
-								} => '${vs.channel.name}'`)
+								} => '${(await guild.channels.fetch(vs.channelId)).name}'`)
 					].join(EOL));
 				}
 			}

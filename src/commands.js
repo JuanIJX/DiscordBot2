@@ -24,6 +24,11 @@ export default async function(cadena, cmdName, args) {
 
 			log(`test`);
 			break;
+		case "mss":
+		case "musicstate":
+			//this.modules.get("Music").musicController.player.nodes.cache.forEach()
+			log("proximamente...")
+			break;
 		case "pl":
 		case "plugins":
 			log([

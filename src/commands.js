@@ -82,7 +82,7 @@ export default async function(cadena, cmdName, args) {
 			aux_1 = await this.discordManager.discord.guilds.fetch();
 			log([
 				`Lista de servidores (${aux_1.size}):`,
-				...aux_1.map(g => `- ID(${g.id}) '${g.name}'`)
+				...aux_1.map(g => `- ID(${g.id}) '${g.name}' (${g.voiceStates.cache.size}/${g.memberCount})`)
 			].join(EOL));
 			break;
 		case "gl":

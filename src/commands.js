@@ -80,10 +80,12 @@ export default async function(cadena, cmdName, args) {
 		case "g":
 		case "guilds":
 			aux_1 = await this.discordManager.discord.guilds.fetch();
-			log([
-				`Lista de servidores (${aux_1.size}):`,
-				...aux_1.map(g => `- ID(${g.id}) '${g.name}' (${g.voiceStates.cache.size}/${g.memberCount})`)
-			].join(EOL));
+			aux_2 = [];
+			for (const [guildId] of aux_1) {
+				const g = await this.discordManager.discord.guilds.fetch(guildId);
+				aux_2.push(`- ID(${g.id}) '${g.name}' (${g.voiceStates.cache.size}/${g.memberCount})`)
+			}
+			log([ `Lista de servidores (${aux_1.size}):`, ...aux_2 ].join(EOL));
 			break;
 		case "gl":
 		case "guildleave":

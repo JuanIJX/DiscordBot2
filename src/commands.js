@@ -26,8 +26,14 @@ export default async function(cadena, cmdName, args) {
 			break;
 		case "mss":
 		case "musicstate":
-			//this.modules.get("Music").musicController.player.nodes.cache.forEach()
-			log("proximamente...")
+			this.modules.get("Music").musicController.player.nodes.cache.forEach(guildQueue => {
+				const { dispatcher } = guildQueue;
+
+				console.log("---------------------");
+				console.log(dispatcher.voiceConnection);
+				console.log(dispatcher.audioPlayer);
+				console.log(dispatcher.channel);
+			});
 			break;
 		case "pl":
 		case "plugins":

@@ -93,6 +93,10 @@ export default async function(cadena, cmdName, args) {
 				if(guild) {
 					aux_1 = await guild.roles.fetch();
 					aux_2 = guild.voiceStates.cache;
+
+					// Intento de descachear las cosas
+					for (const [_, vs] of aux_2)
+						await guild.channels.fetch(vs.channelId);
 					log([
 						`Información del guild ID(${guild.id}) '${guild.name}'`,
 						`- Owner: ID(${guild.ownerId}) '${await guild.members.fetch(guild.ownerId).then(m => m.displayName)}'`,
@@ -120,7 +124,7 @@ export default async function(cadena, cmdName, args) {
 									(vs.selfMute ? '😬' : '') +
 									(vs.selfVideo ? '📸' : '') +
 									(vs.streaming ? '📺' : '')
-								} => '${(await guild.channels.fetch(vs.channelId)).name}'`)
+								} => '${vs.channel.name}'`)
 					].join(EOL));
 				}
 			}

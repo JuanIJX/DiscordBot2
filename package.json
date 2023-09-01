@@ -1,6 +1,6 @@
 {
   "name": "discord-bot",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "description": "Lector de plugins",
   "main": "src/run.js",
   "type": "module",

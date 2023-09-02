@@ -101,7 +101,7 @@ export default async function(cadena, cmdName, args) {
 			aux_2 = [];
 			for (const [guildId] of aux_1) {
 				const g = await this.discordManager.discord.guilds.fetch(guildId);
-				aux_2.push(`- ID(${g.id}) '${g.name}' (${g.voiceStates.cache.size}/${g.memberCount})`)
+				aux_2.push(`- ID(${g.id}) '${g.name}' (${g.voiceStates.cache.filter(vs => !!vs.channelId).size}/${g.memberCount})`)
 			}
 			log([ `Lista de servidores (${aux_1.size}):`, ...aux_2 ].join(EOL));
 			break;
@@ -123,14 +123,15 @@ export default async function(cadena, cmdName, args) {
 				guild = await this.discordManager.discord.guilds.fetch(args[0]).catch(() => { log(`Guild ID(${args[0]}) no encontrado`, Level.ERROR); return null; });
 				if(guild) {
 					aux_1 = await guild.roles.fetch();
-					aux_2 = {};
-					for (const [_, vs] of guild.voiceStates.cache) {
+					aux_2 = guild.voiceStates.cache.filter(vs => !!vs.channelId)
+					aux_3 = {};
+					for (const [_, vs] of aux_2) {
 						if(!vs.channelId)
 							continue;
 						channel = await guild.channels.fetch(vs.channelId);
-						if(!aux_2.hasOwnProperty(channel.id))
-							aux_2[channel.id] = { channel, vs: [] };
-						aux_2[channel.id].vs.push(vs);
+						if(!aux_3.hasOwnProperty(channel.id))
+							aux_3[channel.id] = { channel, vs: [] };
+						aux_3[channel.id].vs.push(vs);
 					}
 
 					log([
@@ -150,8 +151,8 @@ export default async function(cadena, cmdName, args) {
 						...aux_1
 							.sort((rA, rB) => rB.position - rA.position)
 							.map(rol => `  🞄 rol(${rol.id}) '${rol.name}': ${rol.permissions.has(PermissionFlagsBits.Administrator) ? 'ADMIN' : 'NORMAL'}`),
-						`- Voice states: ${guild.voiceStates.cache.size}`,
-						...aux_2.map((channelID, channelVs) => [
+						`- Voice states: ${aux_2.size}`,
+						...aux_3.map((channelID, channelVs) => [
 								`  🞄 '${channelVs.channel.name}' => '${channelVs.channel.guild.name}' channel(${channelID}) guild(${channelVs.channel.guild.id}) (${channelVs.vs.length})`,
 								...channelVs.vs.map(vs => `    ~ user(${vs.id}) '${vs.member.displayName}'${vs.member.user.bot ? " BOT" : ""}${vs.member.permissions.has(PermissionFlagsBits.Administrator) ? " ADM" : ""} | ${
 									(vs.suppress ? '🚫' : '') +

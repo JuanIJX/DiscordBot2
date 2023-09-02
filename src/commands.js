@@ -126,6 +126,10 @@ export default async function(cadena, cmdName, args) {
 					aux_2 = {};
 					for (const [_, vs] of guild.voiceStates.cache) {
 						channel = await guild.channels.fetch(vs.channelId);
+						if(!channel) {
+							console.log(`ERROR EN CHANNEL ID(${vs.channelId})`)
+							continue;
+						}
 						if(!aux_2.hasOwnProperty(channel.id))
 							aux_2[channel.id] = { channel, vs: [] };
 						aux_2[channel.id].vs.push(vs);

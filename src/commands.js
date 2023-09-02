@@ -168,16 +168,16 @@ export default async function(cadena, cmdName, args) {
 		case "help":
 			log([
 				`Lista de comandos de consola:`,
-				`- plugins`,
-				`- enablepl`,
-				`- disablepl`,
+				`- plugins, pl`,
+				`- enablepl, ep`,
+				`- disablepl, dp`,
 				`- enlace`,
-				`- queues`,
-				`- channels`,
-				`- users`,
-				`- guilds`,
-				`- guildleave`,
-				`- guildinfo`
+				`- queues, qs`,
+				`- channels, ch`,
+				`- users, us`,
+				`- guilds, g`,
+				`- guildleave, gl`,
+				`- guildinfo, gi`
 			].join(EOL));
 			break;
 		default:

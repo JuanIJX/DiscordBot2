@@ -108,7 +108,7 @@ export default async function(cadena, cmdName, args) {
 		case "gl":
 		case "guildleave":
 			if(args.length == 0)
-				log(`Falta el número de plugin`, Level.ERROR);
+				log(`Falta el número de guild`, Level.ERROR);
 			else {
 				guild = await this.discordManager.discord.guilds.fetch(args[0]).catch(() => { log(`Guild ID(${args[0]}) no encontrado`, Level.ERROR); return null; });
 				if(guild)
@@ -118,7 +118,7 @@ export default async function(cadena, cmdName, args) {
 		case "gi":
 		case "guildinfo":
 			if(args.length == 0)
-				log(`Falta el número de plugin`, Level.ERROR);
+				log(`Falta el número de guild`, Level.ERROR);
 			else {
 				guild = await this.discordManager.discord.guilds.fetch(args[0]).catch(() => { log(`Guild ID(${args[0]}) no encontrado`, Level.ERROR); return null; });
 				if(guild) {

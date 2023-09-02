@@ -172,6 +172,9 @@ export default async function(cadena, cmdName, args) {
 				`- enablepl`,
 				`- disablepl`,
 				`- enlace`,
+				`- queues`,
+				`- channels`,
+				`- users`,
 				`- guilds`,
 				`- guildleave`,
 				`- guildinfo`

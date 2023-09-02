@@ -5,7 +5,7 @@ import { PermissionFlagsBits } from "discord.js";
 
 export default async function(cadena, cmdName, args) {
 	const log = (function(msg, level) { this._logger.log(level ?? Level.INFO, "CONSOLE", msg); }).bind(this);
-	let cn = 0, user, member, guild;
+	let cn = 0, user, member, guild, channel;
 	let aux_1, aux_2, aux_3;
 
 	switch (cmdName) {
@@ -24,15 +24,33 @@ export default async function(cadena, cmdName, args) {
 
 			log(`test`);
 			break;
-		case "mss":
-		case "musicstate":
-			this.modules.get("Music").musicController.player.nodes.cache.forEach(guildQueue => {
-				const { dispatcher } = guildQueue;
-
-				console.log("---------------------");
-				console.log(dispatcher.voiceConnection);
-				console.log(dispatcher.audioPlayer);
-				console.log(dispatcher.channel);
+		case "ch":
+		case "channels":
+			aux_1 = await this.discordManager.discord.channels.cache;
+			log(`Lista de canales en cache (${aux_1.size})`)
+			if(args[0])
+				log([
+					...aux_1.map(channel => `channel(${channel.id}) '${channel.name}'\tguild(${channel.guild.id}) '${channel.guild.name}'`),
+					`Size: (${aux_1.size})`,
+				]);
+			break;
+		case "us":
+		case "users":
+			aux_1 = await this.discordManager.discord.users.cache;
+			log(`Lista de usuarios en cache (${aux_1.size})`)
+			if(args[0])
+				log([
+					...aux_1.map(user => `user(${user.id}) '${user.username}'`),
+					`Size: (${aux_1.size})`,
+				]);
+			break;
+		case "qs":
+		case "queues":
+			aux_1 = this.modules.get("Music").musicController.player.nodes.cache;
+			log(`Queues (${aux_1.size}):`)
+			aux_1.forEach(guildQueue => {
+				const { id, name, guild } = guildQueue.dispatcher.channel;
+				log(`guild(${guild.id})='${guild.name}' channel(${id})='${name}'`);
 			});
 			break;
 		case "pl":
@@ -105,10 +123,14 @@ export default async function(cadena, cmdName, args) {
 				guild = await this.discordManager.discord.guilds.fetch(args[0]).catch(() => { log(`Guild ID(${args[0]}) no encontrado`, Level.ERROR); return null; });
 				if(guild) {
 					aux_1 = await guild.roles.fetch();
-					aux_2 = guild.voiceStates.cache;
+					aux_2 = {};
+					for (const [_, vs] of guild.voiceStates.cache) {
+						channel = await guild.channels.fetch(vs.channelId);
+						if(!aux_2.hasOwnProperty(channel.id))
+							aux_2[channel.id] = { channel, vs: [] };
+						aux_2[channel.id].vs.push(vs);
+					}
 
-					// Intento de descachear las cosas
-					for (const [_, vs] of aux_2) await guild.channels.fetch(vs.channelId);
 					log([
 						`Información del guild ID(${guild.id}) '${guild.name}'`,
 						`- Owner: ID(${guild.ownerId}) '${await guild.members.fetch(guild.ownerId).then(m => m.displayName)}'`,
@@ -125,10 +147,11 @@ export default async function(cadena, cmdName, args) {
 						`- Roles: ${aux_1.size}`,
 						...aux_1
 							.sort((rA, rB) => rB.position - rA.position)
-							.map(rol => `  🞄 ${rol.name}: ${rol.permissions.has(PermissionFlagsBits.Administrator) ? 'ADMIN' : 'NORMAL'}`),
-						`- Voice states: ${aux_2.size}`,
-						...aux_2 // Comprobar tmb si es un bot
-							.map(vs => `  🞄 ID(${vs.id}) '${vs.member.displayName}'${vs.member.user.bot ? " BOT" : ""} |${
+							.map(rol => `  🞄 rol(${rol.id}) '${rol.name}': ${rol.permissions.has(PermissionFlagsBits.Administrator) ? 'ADMIN' : 'NORMAL'}`),
+						`- Voice states: ${guild.voiceStates.cache.size}`,
+						...aux_2.map((channelID, channelVs) => [
+								`  🞄 '${channelVs.channel.name}' => '${channelVs.channel.guild.name}' channel(${channelID}) guild(${channelVs.channel.guild.id}) (${channelVs.vs.length})`,
+								...channelVs.vs.map(vs => `    ~ user(${vs.id}) '${vs.member.displayName}'${vs.member.user.bot ? " BOT" : ""}${vs.member.permissions.has(PermissionFlagsBits.Administrator) ? " ADM" : ""} | ${
 									(vs.suppress ? '🚫' : '') +
 									(vs.serverDeaf ? '🔇' : '') +
 									(vs.serverMute ? '🚷' : '') +
@@ -136,7 +159,8 @@ export default async function(cadena, cmdName, args) {
 									(vs.selfMute ? '😬' : '') +
 									(vs.selfVideo ? '📸' : '') +
 									(vs.streaming ? '📺' : '')
-								} => '${vs.channel.name}'`)
+								}`),
+							].join("\n"))
 					].join(EOL));
 				}
 			}

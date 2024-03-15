@@ -95,6 +95,20 @@ export default async function(cadena, cmdName, args) {
 		case "enlace":
 			log(this.inviteLink);
 			break;
+		case "kick":
+			if(args.length < 2)
+				log(`Faltan parámetros: kick <guild> <user>`, Level.ERROR);
+			else {
+				guild = await this.discordManager.discord.guilds.fetch(args[0]).catch(() => { log(`Guild ID(${args[0]}) no encontrado`, Level.ERROR); return null; });
+				if(guild) {
+					member = await guild.members.fetch(args[1]).catch(() => { log(`Member ID(${args[1]}) no encontrado`, Level.ERROR); return null; });
+					if(member)
+						await member.kick()
+							.then(member => log(`Usuario '${member.displayName}' expulsado del servidor '${guild.name}'`))
+							.catch(err => log(`Log error al expulsar al usuario '${member.displayName}'`));
+				}
+			}
+			break;
 		case "g":
 		case "guilds":
 			aux_1 = await this.discordManager.discord.guilds.fetch();

@@ -680,6 +680,13 @@ export default class GestorCanales {
 					}
 				} catch (error) { this.error(error); }
 			}
+			else {
+				let canal = guildCanal.list.find(c => c.id == channel.id);
+				if(canal && (
+					(member.user.bot && canal.antibots) ||
+					(canal.antiadmin && !canal.hasPermJoin(member.id))
+				)) await member.voice.setChannel(null);
+			}
 		}
 	}
 
@@ -1413,6 +1420,13 @@ class Canal {
 		if(this.banneds.has(userID))
 			return CRol.BANNED;
 		return -1;
+	}
+
+	hasPermJoin(userID) {
+		const cRol = this.getUserRol(userID);
+		return cRol == -1 ?
+			this.type == Type.PUBLIC :
+			GestorCanales._permsAllowDeny(this.type, cRol).deny.indexOf(PermissionFlagsBits["Connect"]) == -1;
 	}
 
 	async updateUserPerm(userID) {

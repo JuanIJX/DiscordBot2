@@ -27,7 +27,7 @@ export default async function(cadena, cmdName, args) {
 		case "ch":
 		case "channels":
 			aux_1 = await this.discordManager.discord.channels.cache;
-			log(`Lista de canales en cache (${aux_1.size})`)
+			log(`Lista de canales en cache (${aux_1.size})`);
 			if(args[0])
 				log([
 					...aux_1.map(channel => `channel(${channel.id}) '${channel.name}'\tguild(${channel.guild.id}) '${channel.guild.name}'`),
@@ -37,7 +37,7 @@ export default async function(cadena, cmdName, args) {
 		case "us":
 		case "users":
 			aux_1 = await this.discordManager.discord.users.cache;
-			log(`Lista de usuarios en cache (${aux_1.size})`)
+			log(`Lista de usuarios en cache (${aux_1.size})`);
 			if(args[0])
 				log([
 					...aux_1.map(user => `user(${user.id}) '${user.username}'`),
@@ -47,7 +47,7 @@ export default async function(cadena, cmdName, args) {
 		case "qs":
 		case "queues":
 			aux_1 = this.modules.get("Music").musicController.player.nodes.cache;
-			log(`Queues (${aux_1.size}):`)
+			log(`Queues (${aux_1.size}):`);
 			aux_1.forEach(guildQueue => {
 				const { id, name, guild } = guildQueue.dispatcher.channel;
 				log(`guild(${guild.id})='${guild.name}' channel(${id})='${name}'`);
@@ -192,6 +192,7 @@ export default async function(cadena, cmdName, args) {
 				`- queues, qs`,
 				`- channels, ch`,
 				`- users, us`,
+				`- kick`,
 				`- guilds, g`,
 				`- guildleave, gl`,
 				`- guildinfo, gi`

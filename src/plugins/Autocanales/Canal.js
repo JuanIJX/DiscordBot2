@@ -684,7 +684,7 @@ export default class GestorCanales {
 				let canal = guildCanal.list.find(c => c.id == channel.id);
 				if(canal && (
 					(member.user.bot && canal.antibots) ||
-					(canal.antiadmin && !canal.hasPermJoin(member.id))
+					(!member.user.bot && canal.antiadmin && !canal.hasPermJoin(member.id))
 				)) await member.voice.setChannel(null);
 			}
 		}

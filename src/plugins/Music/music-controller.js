@@ -31,7 +31,6 @@ export default class MusicController {
 	}
 
 	async load() {
-		//await this.player.extractors.loadDefault();
 		await this.player.extractors.loadMulti(DefaultExtractors);
 
 		this.player.events.on(GuildQueueEvent.playerStart, (queue, track) => this.module.log(Level.DEBUG, `(g: ${queue.id}) Canción iniciada '${track.title}'`));

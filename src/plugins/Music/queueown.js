@@ -1,4 +1,3 @@
-import { joinVoiceChannel } from "@discordjs/voice";
 import { GuildQueue, GuildQueueEvent, SearchResult, Track, Util } from "./DiscordPlayer.cjs"
 
 export default class Queue extends GuildQueue {

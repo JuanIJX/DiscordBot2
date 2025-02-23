@@ -579,7 +579,7 @@ export default class GestorCanales {
 			type: ChannelType.GuildVoice,
 			parent: category
 		}).then(c => c.lockPermissions());
-		this.debug(`Guild(${guild.id}) canal de texto creado id(${voice.id})`);
+		this.debug(`Guild(${guild.id}) canal de voz creado id(${voice.id})`);
 
 		const msg = await text.send(this._plugin.getEmbed(this.constructor._getEmbedHelp("/canal")));
 		for (let em of this.constructor._emojis)

@@ -1,7 +1,9 @@
 import { Level } from "../../libraries/logger.js";
 import { Player, EqualizerConfigurationPreset, GuildQueueEvent, PlayerEvent } from "./DiscordPlayer.cjs"
+import { DefaultExtractors  } from "./DiscordPlayerExtractor.cjs"
 import PlaylistManager from "./myplaylist.js";
 import Queue2 from "./queueown.js";
+import { YoutubeiExtractor } from "discord-player-youtubei"
 export default class MusicController {
 	constructor(module) {
 		Object.defineProperty(this, "module", { value: module, enumerable: true });
@@ -9,12 +11,28 @@ export default class MusicController {
 			autoRegisterExtractor: false,
 			ytdlOptions: { quality: "highestaudio", highWaterMark: 1 << 25 }
 		}), enumerable: true });
+		this.player.extractors.register(YoutubeiExtractor, {});
 		Object.defineProperty(this, "_config", { value: this.module.configManager.get("queue").content });
 		Object.defineProperty(this, "playlistManager", { value: new PlaylistManager(this) });
+
+		const originalConsoleLog = console.log;
+		const originalConsoleError = console.error;
+		console.log = function (...args) {
+			const message = args.join(" ");
+			if (message.includes("[YOUTUBEJS][Text]: Unable to find matching run")) return;
+			originalConsoleLog.apply(console, args);
+		};
+
+		console.error = function (...args) {
+			const message = args.join(" ");
+			if (message.includes("[YOUTUBEJS][Text]: Unable to find matching run")) return;
+			originalConsoleError.apply(console, args);
+		};
 	}
 
 	async load() {
-		await this.player.extractors.loadDefault();
+		//await this.player.extractors.loadDefault();
+		await this.player.extractors.loadMulti(DefaultExtractors);
 
 		this.player.events.on(GuildQueueEvent.playerStart, (queue, track) => this.module.log(Level.DEBUG, `(g: ${queue.id}) Canción iniciada '${track.title}'`));
 		this.player.events.on(GuildQueueEvent.playerFinish, (queue, track) => this.module.log(Level.DEBUG, `(g: ${queue.id}) Canción finalizada '${track.title}'`));

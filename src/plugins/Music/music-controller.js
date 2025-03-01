@@ -1,9 +1,9 @@
 import { Level } from "../../libraries/logger.js";
 import { Player, EqualizerConfigurationPreset, GuildQueueEvent, PlayerEvent } from "./DiscordPlayer.cjs"
-import { DefaultExtractors  } from "./DiscordPlayerExtractor.cjs"
+import { DefaultExtractors } from "./DiscordPlayerExtractor.cjs"
+import { YoutubeiExtractor } from "discord-player-youtubei"
 import PlaylistManager from "./myplaylist.js";
 import Queue2 from "./queueown.js";
-import { YoutubeiExtractor } from "discord-player-youtubei"
 
 const originalConsoleLog = console.log;
 const originalConsoleError = console.error;
@@ -25,12 +25,12 @@ export default class MusicController {
 			autoRegisterExtractor: false,
 			ytdlOptions: { quality: "highestaudio", highWaterMark: 1 << 25 }
 		}), enumerable: true });
-		this.player.extractors.register(YoutubeiExtractor, {});
 		Object.defineProperty(this, "_config", { value: this.module.configManager.get("queue").content });
 		Object.defineProperty(this, "playlistManager", { value: new PlaylistManager(this) });
 	}
 
 	async load() {
+		await this.player.extractors.register(YoutubeiExtractor, {});
 		await this.player.extractors.loadMulti(DefaultExtractors);
 
 		this.player.events.on(GuildQueueEvent.playerStart, (queue, track) => this.module.log(Level.DEBUG, `(g: ${queue.id}) Canción iniciada '${track.title}'`));
